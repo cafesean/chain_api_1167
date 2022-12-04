@@ -1,0 +1,19 @@
+{
+  "lambdaLayers": [
+    {
+      "type": "ExternalLayer",
+      "arn": "arn:aws:lambda:ap-southeast-1:888955155988:layer:token-node_modules:3"
+    }
+  ],
+  "environmentVariableList": [
+    {
+      "cloudFormationParameterName": "alchemyTestnetUrl",
+      "environmentVariableName": "ALCHEMY_TESTNET_URL"
+    },
+    {
+      "cloudFormationParameterName": "testnetPrivateKey",
+      "environmentVariableName": "TESTNET_PRIVATE_KEY"
+    }
+  ],
+  "permissions": {}
+}
