@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 
-import { TokenService } from '../service';
+import { TokenService, CollectionService, UserService } from '../service';
 
 export default fp(async (fastify, opts) => {
   fastify
@@ -19,9 +19,13 @@ declare module 'fastify' {
 
 class ServiceHolder {
   token: TokenService;
+  collection: CollectionService;
+  user: UserService;
 
   constructor(fastify: FastifyInstance) {
     this.token = ServiceHolder.init(fastify, TokenService);
+    this.collection = ServiceHolder.init(fastify, CollectionService);
+    this.user = ServiceHolder.init(fastify, UserService);
   }
 
   static init<T>(fastify: FastifyInstance, serviceType: { new(): T; }): T {

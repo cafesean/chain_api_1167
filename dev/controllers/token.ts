@@ -9,13 +9,12 @@ import { abi } from '../constants/abi';
 // console.log("provider = ", provider);
 
 import {
-  getUriSchema
+  getUriSchema, mintSchema
 } from '../schema/token';
 
 export default async function tokenController(fastify: FastifyInstance) {
 	fastify.get(
 		'/',
-		getUriSchema(fastify),
 		async (request, reply) => {
 			var helloString = await fastify.service.token.hello();
 			return { result: helloString };
@@ -41,36 +40,32 @@ export default async function tokenController(fastify: FastifyInstance) {
       }
 	)
 
+  	fastify.post(
+		'/mint/:contract/:classId',
+		mintSchema(fastify),
+		async (request : any, resp: any) => {
+			const { contract, classId } = request.params;
+			// const { address, skillIds, skillScores, attributeIds, attributeValues } = request.query;
+			const { address } = request.query;
 
-  	// fastify.post(
-    //   '/mint/:contract/:classId',
-    //   mintSchema(fastify),
-	//   async (request : any, resp: any) => {
-    //     //const { count } = request.query; 
-	// 	const { contract, classId } = request.params;
-	// 	// const { address, skillIds, skillScores, attributeIds, attributeValues } = request.query;
-	// 	const { address } = request.query;
-
-
-
-	// 	try {
-	// 		const contractNFT = new ethers.Contract(contract, abi, env.wallet);
-	// 		const mintResult = await fastify.service.token.mint(
-	// 				contractNFT,
-	// 				classId,
-	// 				address);
-	// 				// skillIds, 
-	// 				// skillScores, 
-	// 				// attributeIds, 
-	// 				// attributeValues);
-		
-	//         return { result: mintResult };
-	// 	} catch(err) {
-	// 		resp.send(err);
-	// 	}
-
-    //   }
-	// )
+			try {
+				const contractNFT = new ethers.Contract(contract, abi, env.wallet);
+				
+				const mintResult = await fastify.service.token.mint(
+						contractNFT,
+						classId,
+						address);
+						// skillIds, 
+						// skillScores, 
+						// attributeIds, 
+						// attributeValues);
+			
+				return { result: mintResult };
+			} catch(err) {
+				resp.send(err);
+			}
+		}
+	)
 
 //   	fastify.get(
 //       '/:contract/:id1',
