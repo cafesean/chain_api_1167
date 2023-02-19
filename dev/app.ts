@@ -34,9 +34,11 @@ function init() {
 
 if (require.main === module) {
   // called directly i.e. "node app"
-  init().listen({ port: 3000 }, (err) => {
+
+  var port = 4000
+  init().listen({ port: port }, (err) => {
     if (err) console.error(err);
-    console.log('server listening on 3000');
+    console.log('server listening on ' + port);
   });
 } else {
   // required as a module => executed on aws lambda

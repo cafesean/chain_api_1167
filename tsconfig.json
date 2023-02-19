@@ -1,18 +1,21 @@
 {
-  "extends": "fastify-tsconfig",
-  "compilerOptions": {
-    "allowJs": true,
-    "declaration": false,
-    "outDir": "src",
-    "target": "es2020",
-    "esModuleInterop": true,
-    "moduleResolution": "node",
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "sourceMap": false,
-    "module" :"commonjs",
-    "skipLibCheck": true,
-  },
-  "include": [
-    "dev/**/*.ts", "dev/*.ts", "dev/*.js"  ]
+	"extends": "fastify-tsconfig",
+	"compilerOptions": {
+    "baseUrl": ".",
+		"paths": {
+			"@contracts/*": ["contracts/*"]
+		},
+		"allowJs": true,
+		"declaration": false,
+		"outDir": "src",
+		"target": "es2020",
+		"esModuleInterop": true,
+		"moduleResolution": "node",
+		"strict": true,
+		"forceConsistentCasingInFileNames": true,
+		"sourceMap": false,
+		"module": "commonjs",
+		"skipLibCheck": true
+	},
+	"include": ["dev/**/*.ts", "dev/*.ts", "dev/*.js", "hardhat.config.ts"]
 }
