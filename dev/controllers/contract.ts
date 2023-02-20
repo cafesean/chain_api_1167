@@ -20,9 +20,9 @@ export default async function contractController(fastify: FastifyInstance) {
     '/deploy',
     deployContractSchema(fastify),
     async (request: any, resp: any) => {
-      console.log("request.body = ", request.body);
-      const { name } = request.body;
-      const contract = await fastify.service.contract.deploy(name);
+      // const { name,  } = request.body;
+
+      const contract = await fastify.service.contract.deploy(request.body);
 
       resp.success({
         contract_id: contract,

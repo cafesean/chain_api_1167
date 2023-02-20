@@ -1,55 +1,76 @@
 import { BaseService } from "./base";
 import { ethers } from "hardhat";
 import * as errors from "../errors";
+import { PrismaClient } from "@prisma/client";
 
 const contractSol = "Proxy";
 
 export class ContractService extends BaseService {
-	async deploy(name: string) {
+	async deploy(reqBody: any) {
 		const [deployer] = await ethers.getSigners();
 		console.log("Deploying contracts with the account:", deployer.address);
 		console.log("Account balance:", (await deployer.getBalance()).toString());
 
 		const factory = await ethers.getContractFactory(contractSol);
-		const factoryContract = await factory.deploy(name);
+		const factoryContract = await factory.deploy(reqBody.name);
 
 		console.log("factoryContract = ", factoryContract.address);
 		console.log("deployer = ", deployer.address);
 
-		await factoryContract.deployed().then(() => {
-      const contract = this.prisma.contract.create({
-        data: {
-          contract_id: factoryContract.address,
-          owner: deployer.address,
-          name: name,
-        }
-      });
-      return contract;
-    }).catch((err) => {
-      return (err);
-    });
-    
+		const prisma = new PrismaClient();
+
+		await factoryContract
+			.deployed()
+			.then(async () => {
+				console.log("In then");
+				try {
+					const contract = await prisma.org.update({
+						where: {
+              id: reqBody.org_id,
+            },
+            data: {
+							series: {
+								create: {
+									contract: factoryContract.address,
+									owner: deployer.address,
+									name: reqBody.name,
+									description: reqBody.description,
+									image_url: reqBody.image_url,
+									slug: reqBody.slug,
+								},
+							},
+						},
+					});
+					return contract;
+				} catch (err) {
+					console.log("Error = ", err);
+				}
+			})
+			.catch((err) => {
+				return err;
+			});
+
 		// console.log(`Contract deployed to ${factoryContract.address}`);
 
 		// console.log("value = ", await factoryContract.value());
 
-    // if (!contract) {
+		// if (!contract) {
 		// return contract;
 	}
 
 	async register(
-		contract_id: string,
+		contract_address: string,
 		class_id: string,
 		organizerId: string,
 		eventId: string,
 		ticketId: string,
 		ticketTypeId: string
 	) {
-		await this.findContract(contract_id);
+		await this.findContract(contract_address);
 
 		// await this.prisma.xp.create({
 		//   data: {
-		//     contract_id,
+		//     contract_address,
 		//     class_id,
 		//     organizerId,
 		//     eventId,
@@ -66,7 +87,7 @@ export class ContractService extends BaseService {
 		ticketTypeId: string
 	) {
 		// const event = await this.prisma.contractEvents.findFirst({
-		//   where: {
+		//   where:  {
 		//     organizerId,
 		//     eventId,
 		//     ticketId,
@@ -79,11 +100,11 @@ export class ContractService extends BaseService {
 		// return event;
 	}
 
-	async addAdminUser(contract_id: string, userAddress: string) {
-		const contract = await this.findContract(contract_id);
+	async addAdminUser(contract_address: string, userAddress: string) {
+		const contract = await this.findContract(contract_address);
 
 		const factory = await ethers.getContractFactory(contractSol);
-		const factoryContract = factory.attach(contract.contract_id);
+		const factoryContract = factory.attach(contract.contract_address);
 		const role = "ADMIN_ROLE";
 
 		const response = await factoryContract.grantUserRole(userAddress, role);
@@ -91,7 +112,7 @@ export class ContractService extends BaseService {
 
 		// const contractUser = await this.prisma.contractUser.create({
 		//   data: {
-		//     contract_id: contract_id,
+		//     contract_address: contract_address,
 		//     userId: userAddress,
 		//     role: role,
 		//   }
@@ -102,15 +123,15 @@ export class ContractService extends BaseService {
 	}
 
 	async addClass(
-		contract_id: string,
+		contract_address: string,
 		name: string,
 		desc: string,
 		total: number
 	) {
-		const contract = await this.findContract(contract_id);
+		const contract = await this.findContract(contract_address);
 
 		const factory = await ethers.getContractFactory(contractSol);
-		const factoryContract = factory.attach(contract.contract_id);
+		const factoryContract = factory.attach(contract.contract_address);
 
 		let class_id = 0;
 		const response = await factoryContract.addClass(name, total, desc);
@@ -125,7 +146,7 @@ export class ContractService extends BaseService {
 
 		const contract_classes = await this.prisma.contract_classes.create({
 			data: {
-				contract_id,
+				contract_address,
 				class_id: class_id.toString(),
 				metadata_url: "",
 				name: name,
@@ -138,14 +159,14 @@ export class ContractService extends BaseService {
 	}
 
 	async setClassMetadata(
-		contract_id: string,
+		contract_address: string,
 		class_id: string,
 		metadata_url: string
 	) {
-		await this.findContractClass(contract_id, class_id);
+		await this.findContractClass(contract_address, class_id);
 
 		const factory = await ethers.getContractFactory(contractSol);
-		const factoryContract = factory.attach(contract_id);
+		const factoryContract = factory.attach(contract_address);
 
 		const response = await factoryContract.setURI(class_id, metadata_url);
 		console.log(`Txn: ${response.hash}`);
@@ -153,8 +174,8 @@ export class ContractService extends BaseService {
 
 		const contract_classes = await this.prisma.contract_classes.update({
 			where: {
-				contract_id_class_id: {
-					contract_id,
+				contract_address_class_id: {
+					contract_address,
 					class_id,
 				},
 			},
@@ -167,16 +188,18 @@ export class ContractService extends BaseService {
 	}
 
 	async mintNFT(
-		contract_id: string,
+		contract_address: string,
 		class_id: string,
 		userAddress: string,
 		amount: number
 	) {
-		await this.findContractClass(contract_id, class_id);
+		await this.findContractClass(contract_address, class_id);
 
 		const [deployer] = await ethers.getSigners();
 		const factory = await ethers.getContractFactory(contractSol);
-		const factoryContract = factory.connect(deployer).attach(contract_id);
+		const factoryContract = factory
+			.connect(deployer)
+			.attach(contract_address);
 
 		const response = await factoryContract.operatorMint(
 			userAddress,
@@ -188,7 +211,7 @@ export class ContractService extends BaseService {
 		const transaction = await this.prisma.transaction.create({
 			data: {
 				txnHash: response.hash,
-				contract_id,
+				contract_address,
 				class_id,
 				from: deployer.address,
 				to: userAddress,
@@ -200,17 +223,19 @@ export class ContractService extends BaseService {
 	}
 
 	async transferNFT(
-		contract_id: string,
+		contract_address: string,
 		class_id: string,
 		from: string,
 		to: string,
 		amount: number
 	) {
-		await this.findContractClass(contract_id, class_id);
+		await this.findContractClass(contract_address, class_id);
 
 		const [deployer] = await ethers.getSigners();
 		const factory = await ethers.getContractFactory(contractSol);
-		const factoryContract = factory.connect(deployer).attach(contract_id);
+		const factoryContract = factory
+			.connect(deployer)
+			.attach(contract_address);
 
 		const response = await factoryContract.safeTransferFrom(
 			from,
@@ -227,7 +252,7 @@ export class ContractService extends BaseService {
 		const transaction = await this.prisma.transaction.create({
 			data: {
 				txnHash: response.hash,
-				contract_id,
+				contract_address,
 				class_id,
 				from: from,
 				to: to,
@@ -239,16 +264,18 @@ export class ContractService extends BaseService {
 	}
 
 	async burnNFT(
-		contract_id: string,
+		contract_address: string,
 		class_id: string,
 		userAddress: string,
 		amount: number
 	) {
-		await this.findContractClass(contract_id, class_id);
+		await this.findContractClass(contract_address, class_id);
 
 		const [deployer] = await ethers.getSigners();
 		const factory = await ethers.getContractFactory(contractSol);
-		const factoryContract = factory.connect(deployer).attach(contract_id);
+		const factoryContract = factory
+			.connect(deployer)
+			.attach(contract_address);
 
 		const response = await factoryContract.burn(
 			userAddress,
@@ -260,7 +287,7 @@ export class ContractService extends BaseService {
 		const transaction = await this.prisma.transaction.create({
 			data: {
 				txnHash: response.hash,
-				contract_id,
+				contract_address,
 				class_id,
 				from: deployer.address,
 				to: userAddress,
@@ -296,10 +323,10 @@ export class ContractService extends BaseService {
 		return status;
 	}
 
-	async findContract(contract_id: string) {
+	async findContract(contract_address: string) {
 		const contract = await this.prisma.contract.findFirst({
 			where: {
-				contract_id,
+				contract_address,
 			},
 		});
 		if (!contract) {
@@ -308,10 +335,10 @@ export class ContractService extends BaseService {
 		return contract;
 	}
 
-	async findContractClass(contract_id: string, class_id: string) {
+	async findContractClass(contract_address: string, class_id: string) {
 		const contract_classes = await this.prisma.contract_classes.findFirst({
 			where: {
-				contract_id,
+				contract_address,
 				class_id,
 			},
 			include: {

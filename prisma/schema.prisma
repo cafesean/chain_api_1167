@@ -68,7 +68,7 @@ model series {
   id                Int       @id @default(autoincrement())
   org_id            Int?
   category          Int?      @db.SmallInt
-  title             String?
+  name              String?
   description       String?
   image_url         String?
   banner_url        String?
@@ -85,7 +85,8 @@ model series {
   abi               Json[]    @db.Json
   contract_abi      String?
   contract_id       String?
-  contracts         contract? @relation(fields: [contract_id], references: [contract_id], onDelete: NoAction, onUpdate: NoAction)
+  owner             String?
+  contracts         contract? @relation(fields: [contract_id], references: [contract_address], onDelete: NoAction, onUpdate: NoAction)
   org               org?      @relation(fields: [org_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   xp                xp[]
 }
@@ -138,28 +139,12 @@ model xp_type {
   xp          xp[]
 }
 
-model contract {
-  contract_id  String             @id @default(cuid())
-  owner        String             @db.VarChar(50)
-  name         String             @db.VarChar(250)
-  base_uri     String             @map("base_uri") @db.VarChar(250)
-  created_at   DateTime           @default(now()) @map("created_at")
-  updated_at   DateTime           @default(now()) @updatedAt @map("updated_at")
-  classes      contract_classes[]
-  users        contract_users[]
-  series       series[]
-  transactions transaction[]
-
-  @@map("contracts")
-}
-
 model contract_users {
   contract_id String   @map("contract_id")
   user_id     String   @map("user_id")
   role        String   @db.VarChar(50)
   created_at  DateTime @default(now()) @map("created_at")
   updated_at  DateTime @default(now()) @updatedAt @map("updated_at")
-  contract    contract @relation(fields: [contract_id], references: [contract_id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([contract_id, user_id])
 }
@@ -174,7 +159,7 @@ model contract_classes {
   opensea_url  String   @map("opensea_url") @db.VarChar(250)
   created_at   DateTime @default(now()) @map("created_at")
   updated_at   DateTime @default(now()) @updatedAt @map("updated_at")
-  contract     contract @relation(fields: [contract_id], references: [contract_id], onDelete: NoAction, onUpdate: NoAction)
+  contract     contract @relation(fields: [contract_id], references: [contract_address], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([contract_id, class_id])
 }
@@ -188,7 +173,18 @@ model transaction {
   status      Int      @default(0)
   created_at  DateTime @default(now()) @map("created_at")
   updated_at  DateTime @default(now()) @updatedAt @map("updated_at")
-  contract    contract @relation(fields: [contract_id], references: [contract_id], onDelete: NoAction, onUpdate: NoAction)
+  contract    contract @relation(fields: [contract_id], references: [contract_address], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("transactions")
+}
+
+model contract {
+  contract_address String             @id(map: "contracts_pkey")
+  owner            String             @db.VarChar(50)
+  name             String             @db.VarChar(250)
+  created_at       DateTime           @default(now())
+  updated_at       DateTime           @default(now())
+  classes          contract_classes[]
+  series           series[]
+  transactions     transaction[]
 }
