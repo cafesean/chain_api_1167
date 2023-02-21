@@ -9,12 +9,13 @@ export class TokenService {
 
 	async mint(contract: any, classId: number, address: string) {
 		//}, skillIds:string[], skillScores:number[], attributeIds:number[], attributeValues:string[]) {
-		console.log("contract: ", contract);
+		console.log("contract: ", contract.address);
 		console.log("address: ", address);
 		console.log("classId: ", classId);
 
 		try {
-			let newTokenId = await contract.mint(classId, address, [], [], [], []);
+			var newTokenId = await contract.mint(classId, address, [], [], [], []);
+			console.log("newTokenId: ", newTokenId);
 			return newTokenId;
 		} catch (err) {
 			return err;

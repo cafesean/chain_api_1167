@@ -56,7 +56,9 @@ contract Base is
 
     //event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event ClassURI(string classUri, uint256 indexed classId);
-
+    event ClassCreated(uint256 indexed classId);
+    event SkillCreated(uint256 indexed skillId);
+    event AttributeCreated(uint256 indexed attributeId);
 
     string public name;
     string public description;
@@ -114,11 +116,12 @@ contract Base is
         _setURI("n");
     }
 
-    function mintSingle (address _to, uint256 _newTokenId, uint256 _classId) public onlyAdmin {        
+    function mintSingle (address _to, uint256 _newTokenId, uint256 _classId) public onlyAdmin returns (uint256) {        
             _mint(_to, _newTokenId, 1, "");
             users[_newTokenId].id = _newTokenId;
             users[_newTokenId].account = _to;
             users[_newTokenId].classId = _classId;
+            return _newTokenId;
     }
 
     function burn(address _account, uint256 _id, uint256 _amount) override public onlyAdmin {

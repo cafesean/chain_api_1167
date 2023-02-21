@@ -190,7 +190,7 @@ export function addContractClassSchema(fastify: FastifyInstance) {
       },
       body: {
         type: 'object',
-        required: ['name', 'desc', 'total'],
+        required: ['name', 'desc'],
         properties: {
           name: {
             type: 'string',
@@ -198,11 +198,19 @@ export function addContractClassSchema(fastify: FastifyInstance) {
           },
           desc: {
             type: 'string',
-            maxLength: 1000
+            maxLength: 250
           },
-          total: {
-            type: 'number',
-            maximum: 999999
+          series_id: {
+            type: 'string',
+            maxLength: 10
+          },
+          image_url: {
+            type: 'string',
+            maxLength: 250
+          },
+          slug: {
+            type: 'string',
+            maxLength: 50
           },
         }
       },
@@ -292,19 +300,15 @@ export function mintContractNFTSchema(fastify: FastifyInstance) {
           },
         },
       },
-      body: {
+      query: {
         type: 'object',
-        required: ['user_address', 'amount'],
+        required: ['address'],
         properties: {
-          user_address: {
+          address: {
             type: 'string',
             minLength: 42,
             maxLength: 42
           },
-          amount: {
-            type: 'number',
-            maximum: 1000
-          }
         }
       },
       response: {

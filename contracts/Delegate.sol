@@ -6,7 +6,7 @@ import "./Access.sol";
 // import "hardhat/console.sol";
 
 
-contract NFTDelegate is
+contract DelegateContract is
     Access,
     Base
 {
@@ -58,16 +58,18 @@ contract NFTDelegate is
         string memory _code,
         string memory _name,
         string memory _skillUri
-    ) public onlyOps {
+    ) public onlyOps returns (uint256) {
         if (skills[_id].id == 0) {
             skills[_id].id = _id;
         }
          if (keccak256(abi.encodePacked(_code)) == keccak256(abi.encodePacked("delete"))) {
             delete skills[_id];
+            return 0;
         } else {
             skills[_id].code = _code;
             skills[_id].name = _name;
             bytes(_skillUri).length != 0 ? skills[_id].skillUri = _skillUri : "" ;
+            return _id;
         }
     }
 

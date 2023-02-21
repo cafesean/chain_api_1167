@@ -11,14 +11,14 @@ export const getAbi = async (contract: string) => {
 			contract: contract,
 		},
 		select: {
-			abi: true,
+			contract_abi: true,
 		},
 	});
 
 	if (!data) {
 		return null;
 	}
-	return data.abi;
+	return data.contract_abi;
 };
 
 export default async function tokenController(fastify: FastifyInstance) {
@@ -87,6 +87,9 @@ export default async function tokenController(fastify: FastifyInstance) {
 					JSON.stringify(abi?.abi),
 					env.wallet
 				);
+console.log("contractNFT address = ", contractNFT.address)
+console.log("abi = ", abi?.abi);
+
 
 				// console.log("Abi = ", abi);
 				const mintResult = await fastify.service.token.mint(

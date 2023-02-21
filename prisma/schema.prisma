@@ -16,6 +16,7 @@ model allowlist {
   contract   String?
   is_owned   Boolean?  @default(false)
   class_id   Int?      @db.SmallInt
+  token_id   Int?
   xp         xp?       @relation(fields: [xp_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -68,7 +69,7 @@ model series {
   id                Int       @id @default(autoincrement())
   org_id            Int?
   category          Int?      @db.SmallInt
-  name              String?
+  title             String?
   description       String?
   image_url         String?
   banner_url        String?
@@ -83,10 +84,12 @@ model series {
   contract          String?
   requirements      String?
   abi               Json[]    @db.Json
-  contract_abi      String?
-  contract_id       String?
+  contract_address  String?
   owner             String?
-  contracts         contract? @relation(fields: [contract_id], references: [contract_address], onDelete: NoAction, onUpdate: NoAction)
+  delegate_address  String?
+  template_address  String?
+  delegate_abi      Json[]    @db.Json
+  contract_abi      Json[]    @db.Json
   org               org?      @relation(fields: [org_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   xp                xp[]
 }
@@ -155,7 +158,6 @@ model contract_classes {
   metadata_url String   @map("metadata_url") @db.VarChar(250)
   name         String   @db.VarChar(250)
   desc         String   @db.VarChar(1000)
-  total        Int
   opensea_url  String   @map("opensea_url") @db.VarChar(250)
   created_at   DateTime @default(now()) @map("created_at")
   updated_at   DateTime @default(now()) @updatedAt @map("updated_at")
@@ -165,15 +167,14 @@ model contract_classes {
 }
 
 model transaction {
-  txnHash     String   @id @default(cuid()) @map("txn_hash")
-  contract_id String   @map("contract_id")
-  class_id    String   @map("class_id")
-  from        String   @db.VarChar(50)
-  to          String   @db.VarChar(50)
-  status      Int      @default(0)
-  created_at  DateTime @default(now()) @map("created_at")
-  updated_at  DateTime @default(now()) @updatedAt @map("updated_at")
-  contract    contract @relation(fields: [contract_id], references: [contract_address], onDelete: NoAction, onUpdate: NoAction)
+  txnHash          String   @id @default(cuid()) @map("txn_hash")
+  class_id         String   @map("class_id")
+  from             String
+  to               String
+  status           Int      @default(0)
+  created_at       DateTime @default(now()) @map("created_at")
+  updated_at       DateTime @default(now()) @updatedAt @map("updated_at")
+  contract_address String?
 
   @@map("transactions")
 }
@@ -185,6 +186,4 @@ model contract {
   created_at       DateTime           @default(now())
   updated_at       DateTime           @default(now())
   classes          contract_classes[]
-  series           series[]
-  transactions     transaction[]
 }

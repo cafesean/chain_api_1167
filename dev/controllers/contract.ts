@@ -2,8 +2,8 @@ import { FastifyInstance } from 'fastify';
 
 import {
   deployContractSchema,
-  // mintContractNFTSchema,
-  // addContractClassSchema,
+  mintContractNFTSchema,
+  addContractClassSchema,
   // setContractClassSchema,
   // addContractAdminSchema,
   // transferContractNFTSchema,
@@ -22,7 +22,7 @@ export default async function contractController(fastify: FastifyInstance) {
     async (request: any, resp: any) => {
       // const { name,  } = request.body;
 
-      const contract = await fastify.service.contract.deploy(request.body);
+      const contract = await fastify.service.contract.deployAll(request.body);
 
       resp.success({
         contract_id: contract,
@@ -95,20 +95,20 @@ export default async function contractController(fastify: FastifyInstance) {
   //   }
   // );
 
-  // fastify.post(
-  //   '/:contract_id/class',
-  //   addContractClassSchema(fastify),
-  //   async (req, resp) => {
-  //     const { contract_id } = req.params;
-  //     const { name, desc, total } = req.body;
+  fastify.put(
+    '/:contract_id/class',
+    addContractClassSchema(fastify),
+    async (request: any, resp: any) => {
+      const { contract_id } = request.params;
+      // const { name, desc, image_url, slug } = request.body;
 
-  //     const contractClass = await fastify.service.contract.addClass(contract_id, name, desc, total);
+      const contractClass = await fastify.service.contract.addClass(contract_id, request.body);
 
-  //     resp.success({
-  //       class_id: contractClass.class_id,
-  //     });
-  //   }
-  // );
+      resp.success({
+        class_id: contractClass,
+      });
+    }
+  );
 
   // fastify.put(
   //   '/:contract_id/class/:class_id',
@@ -123,17 +123,17 @@ export default async function contractController(fastify: FastifyInstance) {
   //   }
   // );
 
-  // fastify.post(
-  //   '/:contract_id/mint/:class_id',
-  //   mintContractNFTSchema(fastify),
-  //   async (req, resp) => {
-  //     const { contract_id, class_id } = req.params;
-  //     const { userAddress, amount } = req.body;
+  fastify.put(
+    '/:contract_id/mint/:class_id',
+    mintContractNFTSchema(fastify),
+    async (request: any, resp: any) => {
+      const { contract_id, class_id } = request.params;
+      const { address } = request.query;
 
-  //     const { txnHash } = await fastify.service.contract.mintNFT(contract_id, class_id, userAddress, amount);
-  //     resp.success({ txnHash });
-  //   }
-  // );
+      const { txnHash } = await fastify.service.contract.mintNFT(contract_id, class_id, address );
+      resp.success({ txnHash });
+    }
+  );
 
   // fastify.post(
   //   '/:contract_id/transfer/:class_id',

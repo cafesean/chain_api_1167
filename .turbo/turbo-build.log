@@ -1,0 +1,12 @@
+
+> token@2.0.0 build /Users/seanliao/Dropbox/_engineering/code/chainxp/web/apps/api
+> pnpm clean && pnpm compile
+
+
+> token@2.0.0 clean /Users/seanliao/Dropbox/_engineering/code/chainxp/web/apps/api
+> rm -rf src
+
+
+> token@2.0.0 compile /Users/seanliao/Dropbox/_engineering/code/chainxp/web/apps/api
+> tsc
+

@@ -5,22 +5,17 @@ import "./Access.sol";
 import "./Base.sol";
 import "./interface/ITemplate.sol";
 import "./interface/IDelegate.sol";
+
 // import "hardhat/console.sol";
 
-
-contract Proxy is
-    Access,
-    Base
-{
+contract ProxyContract is Access, Base {
     using Counters for Counters.Counter;
     Counters.Counter classesCount;
     Counters.Counter tokenCount;
     Counters.Counter attributeCount;
     Counters.Counter skillCount;
-    
-    constructor(string memory _name) Base(_name)
-    {
-        
+
+    constructor(string memory _name) Base(_name) {
         name = _name;
         _owner = _msgSender();
 
@@ -44,25 +39,32 @@ contract Proxy is
     }
 
     //see if this forces refresh on all classesURI
-    function _setclasses (
-        uint256 _classId, 
-        string calldata _name, 
-        string calldata _description, 
+    function _setClass(
+        uint256 _classId,
+        string calldata _name,
+        string calldata _description,
         string calldata _baseUri,
         address _templateAddress
-    ) public onlyOps {
+    ) public onlyOps returns (uint256) {
         if (_classId == 0) {
             classesCount.increment();
             _classId = classesCount.current();
+            emit ClassCreated(_classId);
         }
-        (bool success,) = DelegateAddress.delegatecall(
-                abi.encodeWithSelector(
-                    IDelegate.setClass.selector, 
-                    _classId, _name, _description, _baseUri, _templateAddress
-                )
-        ); 
+        (bool success, ) = DelegateAddress.delegatecall(
+            abi.encodeWithSelector(
+                IDelegate.setClass.selector,
+                _classId,
+                _name,
+                _description,
+                _baseUri,
+                _templateAddress
+            )
+        );
+        return _classId;
     }
-    function _setSkill (
+
+    function _setSkill(
         uint256 _skillId,
         string memory _code,
         string memory _name,
@@ -71,13 +73,17 @@ contract Proxy is
         if (_skillId == 0) {
             skillCount.increment();
             _skillId = skillCount.current();
+            emit SkillCreated(_skillId);
         }
-        (bool success,) = DelegateAddress.delegatecall(
-                abi.encodeWithSelector(
-                    IDelegate.setSkill.selector, 
-                    _skillId, _code, _name, _skillUri
-                )
-        ); 
+        (bool success, ) = DelegateAddress.delegatecall(
+            abi.encodeWithSelector(
+                IDelegate.setSkill.selector,
+                _skillId,
+                _code,
+                _name,
+                _skillUri
+            )
+        );
     }
 
     function _setAttribute(
@@ -88,12 +94,15 @@ contract Proxy is
         if (_attributeId == 0) {
             attributeCount.increment();
             _attributeId = attributeCount.current();
+            emit AttributeCreated(_attributeId);
         }
-        (bool success,) = DelegateAddress.delegatecall(
-                abi.encodeWithSelector(
-                    IDelegate.setAttribute.selector, 
-                    _attributeId, _name, _code
-                )
+        (bool success, ) = DelegateAddress.delegatecall(
+            abi.encodeWithSelector(
+                IDelegate.setAttribute.selector,
+                _attributeId,
+                _name,
+                _code
+            )
         );
     }
 
@@ -104,26 +113,34 @@ contract Proxy is
         uint256[] memory _attributeIds,
         string[] memory _attributeValues
     ) public onlyOps {
-        (bool success,) = DelegateAddress.delegatecall(
-                abi.encodeWithSelector(
-                    IDelegate.setUserAttributes.selector, 
-                    _tokenId, _skillIds, _skillScores, _attributeIds, _attributeValues
-                )
-        );                  
+        (bool success, ) = DelegateAddress.delegatecall(
+            abi.encodeWithSelector(
+                IDelegate.setUserAttributes.selector,
+                _tokenId,
+                _skillIds,
+                _skillScores,
+                _attributeIds,
+                _attributeValues
+            )
+        );
         tokenURI[_tokenId] = uri(_tokenId);
         emit URI(tokenURI[_tokenId], _tokenId);
     }
 
     //required by opensea
-    function uri(uint256 _tokenId) override virtual public view returns (string memory){
-        address _templateAddress = classes[users[_tokenId].classId].templateAddress;
+    function uri(
+        uint256 _tokenId
+    ) public view virtual override returns (string memory) {
+        address _templateAddress = classes[users[_tokenId].classId]
+            .templateAddress;
 
-        return ITemplateContract(
-                    _templateAddress == address(0x0) ? 
-                    DefaultTemplate : _templateAddress)
-                    .generateUri(_tokenId); //send 0 if classId is 0
+        return
+            ITemplateContract(
+                _templateAddress == address(0x0)
+                    ? DefaultTemplate
+                    : _templateAddress
+            ).generateUri(_tokenId); //send 0 if classId is 0
     }
-
 
     // Operator mint NFT function
     function mint(
@@ -133,44 +150,66 @@ contract Proxy is
         uint256[] memory _skillScores,
         uint256[] memory _attributeIds,
         string[] memory _attributeValues
-    ) public onlyOps {
+    ) public onlyOps returns (uint256) {
+        uint256 _tokenId;
         tokenCount.increment();
-        mintSingle(_to, tokenCount.current(), _classId);
+        _tokenId = mintSingle(_to, tokenCount.current(), _classId);
         //set empty attributes and skills
-        setAttributes(tokenCount.current(), _skillIds, _skillScores, _attributeIds, _attributeValues
+        setAttributes(
+            tokenCount.current(),
+            _skillIds,
+            _skillScores,
+            _attributeIds,
+            _attributeValues
         );
+        return _tokenId;
         //_mint will automatically emit uri
     }
 
-    function mintBatchForClasses(address[] memory _to, uint256 _classId) public onlyOps {        
+    function mintBatchForClasses(
+        address[] memory _to,
+        uint256 _classId
+    ) public onlyOps {
         for (uint256 i = 0; i < _to.length; i++) {
             tokenCount.increment();
             mintSingle(_to[i], tokenCount.current(), _classId);
-        } 
-    }   
-
+        }
+    }
 
     // Interface getters
-    function getAttributeCount() public view returns (uint256) { return attributeCount.current(); }
+    function getAttributeCount() public view returns (uint256) {
+        return attributeCount.current();
+    }
 
     function _attributes(uint256 _id) public view returns (attribute memory) {
         return attributes[_id];
-    } 
+    }
+
     function _users(uint256 _id) public view onlyOps returns (user memory) {
         return users[_id];
     }
+
     function _skills(uint256 _id) public view returns (skill memory) {
         return skills[_id];
-    } 
+    }
+
     function _classes(uint256 _id) public view returns (class memory) {
         return classes[_id];
-    } 
-    function _userAttributes(uint256 _tokenId, uint256 _attributeId) public view onlyOps returns (string memory) {
+    }
+
+    function _userAttributes(
+        uint256 _tokenId,
+        uint256 _attributeId
+    ) public view onlyOps returns (string memory) {
         return userAttributes[_tokenId][_attributeId];
-    } 
-    function _userSkills(uint256 _tokenId, uint256 _skillId) public view onlyOps returns (string memory) {
+    }
+
+    function _userSkills(
+        uint256 _tokenId,
+        uint256 _skillId
+    ) public view onlyOps returns (string memory) {
         return userAttributes[_tokenId][_skillId];
-    } 
+    }
 
     function setDelegateAddress(address _address) public onlyAdmin {
         DelegateAddress = _address;
@@ -180,27 +219,30 @@ contract Proxy is
         DefaultTemplate = _address;
     }
 
-    function setTemplateContract(uint256 _classId, address _address) public onlyAdmin {
+    function setTemplateContract(
+        uint256 _classId,
+        address _address
+    ) public onlyAdmin {
         require(_address != address(0x0));
         classes[_classId].templateAddress = _address;
 
         //Request template contract to add this contract
-        ITemplateContract(classes[_classId].templateAddress).authorizeCallingContract(_msgSender(), address(this));
+        ITemplateContract(classes[_classId].templateAddress)
+            .authorizeCallingContract(_msgSender(), address(this));
     }
 
-    function _setStyles(uint256 _classId, string[] memory _styles) public onlyOps {
+    function _setStyles(
+        uint256 _classId,
+        string[] memory _styles
+    ) public onlyOps {
         //Request template contract to add this contract
         ITemplateContract(classes[_classId].templateAddress).setStyles(_styles);
     }
 
     //need to override to avoid conflicting instances of supportsInterface
-    function supportsInterface(bytes4 interfaceId)
-        public view virtual override(Base, AccessControl)
-        returns (bool)
-    {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(Base, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
-
 }
-
-
