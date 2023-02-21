@@ -374,19 +374,19 @@ export class ContractService extends BaseService {
 
 		console.log(`mint NFT to '${userAddress}' Txn: ${response.hash}`);
 		console.log(`mint NFT to '${userAddress}' Response: ${response}`);
-		// const prisma = new PrismaClient();
-		// const transaction = await prisma.transaction.create({
-		// 	data: {
-		// 		txnHash: response.hash,
-		// 		contract_address: contractAddress,
-		// 		class_id: class_id,
-		// 		from: deployer.address,
-		// 		to: userAddress,
-		// 		status: -1,
-		// 	},
-		// });
-		// await response.wait();
-		return response;
+
+		const transaction = await this.prisma.transactions.create({
+			data: {
+				txn_hash: response.hash,
+				contract_address: contractAddress,
+				class_id: class_id,
+				from: deployer.address,
+				to: userAddress,
+				status: -1,
+			},
+		});
+		await response.wait();
+		return transaction;
 	}
 
 	async transferNFT(
@@ -416,10 +416,10 @@ export class ContractService extends BaseService {
 		);
 		// await response.wait(2);
 
-		const transaction = await this.prisma.transaction.create({
+		const transaction = await this.prisma.transactions.create({
 			data: {
-				txnHash: response.hash,
-				contract_id: contract_address,
+				txn_hash: response.hash,
+				contract_address: contract_address,
 				class_id: class_id,
 				from: from,
 				to: to,
@@ -451,10 +451,10 @@ export class ContractService extends BaseService {
 		);
 		console.log(`burn NFT from '${userAddress}' Txn: ${response.hash}`);
 
-		const transaction = await this.prisma.transaction.create({
+		const transaction = await this.prisma.transactions.create({
 			data: {
-				txnHash: response.hash,
-				contract_id: contract_address,
+				txn_hash: response.hash,
+				contract_address: contract_address,
 				class_id: class_id,
 				from: deployer.address,
 				to: userAddress,
@@ -465,10 +465,10 @@ export class ContractService extends BaseService {
 		return transaction;
 	}
 
-	async verify(txnHash: string): Promise<number> {
-		const transaction = await this.prisma.transaction.findUnique({
+	async verify(txn_hash: string): Promise<number> {
+		const transaction = await this.prisma.transactions.findUnique({
 			where: {
-				txnHash,
+				txn_hash,
 			},
 		});
 
@@ -476,11 +476,11 @@ export class ContractService extends BaseService {
 			throw errors.create(errors.StatusCodes.NOT_FOUND);
 		}
 
-		const status = await this.polygon.scanTransaction(transaction.txnHash);
+		const status = await this.polygon.scanTransaction(transaction.txn_hash);
 
-		await this.prisma.transaction.update({
+		await this.prisma.transactions.update({
 			where: {
-				txnHash,
+				txn_hash,
 			},
 			data: {
 				status,

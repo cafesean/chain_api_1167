@@ -130,8 +130,8 @@ export default async function contractController(fastify: FastifyInstance) {
       const { contract_id, class_id } = request.params;
       const { address } = request.query;
 
-      const { txnHash } = await fastify.service.contract.mintNFT(contract_id, class_id, address );
-      resp.success({ txnHash });
+      const { txn_hash } = await fastify.service.contract.mintNFT(contract_id, class_id, address );
+      resp.success({ txn_hash });
     }
   );
 
