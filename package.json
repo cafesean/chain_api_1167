@@ -7,7 +7,7 @@
 	"scripts": {
 		"amplify:token": "cd amplify/backend/function/token && tsc -p ./tsconfig.json && cd -",
 		"clean": "rm -rf src",
-		"compile": "tsup dev/*.ts dev/**/*.ts --out-dir src/dev",
+		"compile": "tsup dev/*.ts dev/**/*.ts --out-dir src",
 		"build": "pnpm clean && pnpm compile",
 		"deploy": "rm -rf dist && amplify push",
 		"test": "echo \"Error: no test specified\" && exit 1",
