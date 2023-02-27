@@ -56,9 +56,10 @@ contract Base is
 
     //event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event ClassURI(string classUri, uint256 indexed classId);
-    event ClassCreated(uint256 indexed classId);
-    event SkillCreated(uint256 indexed skillId);
-    event AttributeCreated(uint256 indexed attributeId);
+    event TokenCreated(uint256);
+    event ClassCreated(uint256);
+    event SkillCreated(uint256);
+    event AttributeCreated(uint256);
 
     string public name;
     string public description;
@@ -122,6 +123,7 @@ contract Base is
             users[_newTokenId].account = _to;
             users[_newTokenId].classId = _classId;
             return _newTokenId;
+            
     }
 
     function burn(address _account, uint256 _id, uint256 _amount) override public onlyAdmin {

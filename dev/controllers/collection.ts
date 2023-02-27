@@ -71,8 +71,9 @@ export default async function collectionController(fastify: FastifyInstance) {
             const { contract, id1, id2 } = request.params;
 
             try {
-                const contractNFT = new ethers.Contract(contract, abi, env.wallet);
-                const response = await fastify.service.collection.getClasses(contractNFT, id1, id2);
+                // const contractNFT = new ethers.Contract(contract, abi, env.wallet);
+                // const response = await fastify.service.collection.getClasses(contractNFT, id1, id2);
+                const response = await fastify.service.collection.getClasses(contract, id1, id2);
                 return { result: response };
             } catch(err) {
                 resp.send(err);

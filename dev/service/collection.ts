@@ -1,6 +1,16 @@
+import { ethers } from "hardhat";
+
+const ProxySol = "ProxyContract";
 
 interface JSONObject {
     [key: string]: any
+}
+
+async function attachContract(address: string, contract: string) {
+	const contractFactory = await ethers.getContractFactory(contract);
+	const attachedContract = contractFactory.attach(address);
+
+	return attachedContract;
 }
 
 export class CollectionService {   
@@ -48,12 +58,15 @@ export class CollectionService {
         }
     }
     
-    async getClasses(contract: any, from: number, to: number) {
+    async getClasses(contract_address: any, from: number, to: number) {
         var i;
         var data: JSONObject = {};
+        const [owner] = await ethers.getSigners();
+		const contractProxy = await attachContract(contract_address, ProxySol);
+
         try { 
             for (i = from; i <= to; i++) {
-                data["class" + i] = await contract.classes(i);
+                data["class" + i] = await contractProxy.classes(i);
             }
             return JSON.stringify(data);
         } catch (err) {

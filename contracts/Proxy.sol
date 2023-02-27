@@ -6,7 +6,7 @@ import "./Base.sol";
 import "./interface/ITemplate.sol";
 import "./interface/IDelegate.sol";
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 contract ProxyContract is Access, Base {
     using Counters for Counters.Counter;
@@ -45,7 +45,7 @@ contract ProxyContract is Access, Base {
         string calldata _description,
         string calldata _baseUri,
         address _templateAddress
-    ) public onlyOps returns (uint256) {
+    ) public onlyOps returns (uint256 id) {
         if (_classId == 0) {
             classesCount.increment();
             _classId = classesCount.current();
@@ -69,7 +69,7 @@ contract ProxyContract is Access, Base {
         string memory _code,
         string memory _name,
         string memory _skillUri
-    ) public onlyOps {
+    ) public onlyOps returns (uint256 id) {
         if (_skillId == 0) {
             skillCount.increment();
             _skillId = skillCount.current();
@@ -84,13 +84,14 @@ contract ProxyContract is Access, Base {
                 _skillUri
             )
         );
+        return _skillId;
     }
 
     function _setAttribute(
         uint256 _attributeId,
         string memory _name,
         string memory _code
-    ) public onlyOps {
+    ) public onlyOps returns (uint256 id) {
         if (_attributeId == 0) {
             attributeCount.increment();
             _attributeId = attributeCount.current();
@@ -104,6 +105,7 @@ contract ProxyContract is Access, Base {
                 _code
             )
         );
+        return _attributeId;
     }
 
     function setAttributes(
@@ -150,10 +152,11 @@ contract ProxyContract is Access, Base {
         uint256[] memory _skillScores,
         uint256[] memory _attributeIds,
         string[] memory _attributeValues
-    ) public onlyOps returns (uint256) {
+    ) public onlyOps returns (uint256 id) {
         uint256 _tokenId;
         tokenCount.increment();
         _tokenId = mintSingle(_to, tokenCount.current(), _classId);
+        emit TokenCreated(_tokenId);
         //set empty attributes and skills
         setAttributes(
             tokenCount.current(),

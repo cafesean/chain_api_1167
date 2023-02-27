@@ -60,29 +60,25 @@ export class ContractService extends BaseService {
 		// const proxyFactory = await ethers.getContractFactory("Proxy");
 
 		console.log("contract_address: ", contract_address);
-		let class_id = 2;
+		let class_id = "0";
 
 		console.log("request body: ", reqBody);
 		try {
 			const response = await contractProxy._setClass(
-				class_id,
+				Number(class_id),
 				reqBody.name,
 				reqBody.desc,
 				"",
 				reqBody.template
 			);
-			console.log(`Txn: ${response.hash}`);
-			console.log("class_id before: ", class_id);
 			const receipt = await response.wait();
-			for (const event of receipt.events) {
-				if (event.eventSignature === "Return(uint256)") {
-					class_id = event.args[0];
 
-					console.log("class_id after: ", class_id);
+			for (const event of receipt.events) {
+				if (event.eventSignature === "ClassCreated(uint256)") {
+					 const arg = Number(event.args[0]);
+					 class_id = arg.toString();
 				}
 			}
-
-			console.log("response: ", response);
 		} catch (e: any) {
 			throw new Error("Error in adding class: ", e);
 		}
@@ -91,8 +87,6 @@ export class ContractService extends BaseService {
 				.connect(owner)
 				.setTemplateContract(1, reqBody.template);
 		}
-
-		console.log("Series ID: ", reqBody.series_id);
 
 		const prisma = new PrismaClient();
 
@@ -104,7 +98,7 @@ export class ContractService extends BaseService {
 				xp: {
 					create: {
 						// contract: contract_address,
-						class_id: class_id,
+						class_id,
 						title: reqBody.name,
 						description: reqBody.desc,
 						image_url: reqBody.image_url,
@@ -121,6 +115,9 @@ export class ContractService extends BaseService {
 		const factory = await ethers.getContractFactory(sol);
 		const contract = await factory.deploy(contractName);
 		await contract.deployed();
+
+		console.log("Deployed contract: ", sol, " ", contract.address);
+		console.log("Signer: ", signer.address);
 
 		return contract;
 	}
@@ -350,43 +347,77 @@ export class ContractService extends BaseService {
 	}
 
 	async mintNFT(
-		contractAddress: string,
+		contract_address: string,
 		class_id: string,
-		userAddress: string
+		user_address: string
 	) {
 		// await this.findContractClass(contract_address, class_id);
 
 		const [deployer] = await ethers.getSigners();
 		const factory = await ethers.getContractFactory(ProxySol);
-		const factoryContract = factory.connect(deployer).attach(contractAddress);
+		const factoryContract = factory
+			.connect(deployer)
+			.attach(contract_address);
 
 		const response = await factoryContract.mint(
 			class_id,
-			userAddress,
+			user_address,
 			[],
 			[],
 			[],
 			[]
 		);
-		const receipt = await response.wait();
 
-		console.log("receipt: ", receipt);
+		var token_id;
+		const receipt = await response.wait(); // response is empty if using hardhat network
+		console.log("response=", await receipt.events);
+		for (const event of receipt.events) {
+			if (event.event === "TransferSingle") {
+				token_id = Number(event.args.id);
+			}
+		}
 
-		console.log(`mint NFT to '${userAddress}' Txn: ${response.hash}`);
-		console.log(`mint NFT to '${userAddress}' Response: ${response}`);
+		// console.log("token_id = ", token_id);
 
-		const transaction = await this.prisma.transactions.create({
-			data: {
-				txn_hash: response.hash,
-				contract_address: contractAddress,
-				class_id: class_id,
-				from: deployer.address,
-				to: userAddress,
+		const prisma = new PrismaClient();
+
+		const txn = [
+			{
+				txn_hash: response.hash, // must be unique
+				contract_address, // required
+				class_id, // must be string
+				token_id: token_id + "", // must be string
+				from: deployer.address, // required
+				to: user_address, // required
 				status: -1,
 			},
-		});
-		await response.wait();
-		return transaction;
+		];
+
+		for (const t of txn) {
+			const transaction = await prisma.transaction.create({
+				data: t,
+			});
+			console.log(`Created transaction with hash: ${transaction.txn_hash}`);
+		}
+
+		// const allowlist = await prisma.allowlist.updateMany({
+		// 	data: {
+		// 		// txn_hash: response.hash,
+		// 		token_id,
+		// 		is_owned: true,
+		// 	},
+		// 	where: {
+		// 		contract_address,
+		// 		class_id,
+		// 		user_address,
+		// 	},
+		// });
+
+		// console.log("before await");
+		// await response.wait();
+		// console.log("transaction: ", transaction);
+
+		return txn;
 	}
 
 	async transferNFT(
@@ -416,7 +447,8 @@ export class ContractService extends BaseService {
 		);
 		// await response.wait(2);
 
-		const transaction = await this.prisma.transactions.create({
+		// note: add token_id
+		const transaction = await this.prisma.transaction.create({
 			data: {
 				txn_hash: response.hash,
 				contract_address: contract_address,
@@ -451,7 +483,8 @@ export class ContractService extends BaseService {
 		);
 		console.log(`burn NFT from '${userAddress}' Txn: ${response.hash}`);
 
-		const transaction = await this.prisma.transactions.create({
+		// note: add token_id
+		const transaction = await this.prisma.transaction.create({
 			data: {
 				txn_hash: response.hash,
 				contract_address: contract_address,
@@ -466,7 +499,7 @@ export class ContractService extends BaseService {
 	}
 
 	async verify(txn_hash: string): Promise<number> {
-		const transaction = await this.prisma.transactions.findUnique({
+		const transaction = await this.prisma.transaction.findUnique({
 			where: {
 				txn_hash,
 			},
@@ -478,7 +511,7 @@ export class ContractService extends BaseService {
 
 		const status = await this.polygon.scanTransaction(transaction.txn_hash);
 
-		await this.prisma.transactions.update({
+		await this.prisma.transaction.update({
 			where: {
 				txn_hash,
 			},

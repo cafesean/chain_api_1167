@@ -7,13 +7,13 @@
 	"scripts": {
 		"amplify:token": "cd amplify/backend/function/token && tsc -p ./tsconfig.json && cd -",
 		"clean": "rm -rf src",
-		"compile": "tsc",
+		"compile": "tsup dev/*.ts dev/**/*.ts --out-dir src/dev",
 		"build": "pnpm clean && pnpm compile",
 		"deploy": "rm -rf dist && amplify push",
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"start": "pnpm dev/app.ts",
 		"dev": "pnpm start:dev",
-		"start:build": "node src/app.js",
+		"start:build": "node src/dev/app.cjs",
 		"start:dev": "tsx watch dev/app.ts",
 		"typecheck": "tsc -b"
 	},
@@ -38,7 +38,8 @@
 		"hardhat": "^2.12.1",
 		"http-status-codes": "^2.2.0",
 		"path": "^0.12.7",
-		"prisma": "^4.10.0"
+		"prisma": "^4.10.0",
+		"tsup": "^6.6.3"
 	},
 	"devDependencies": {
 		"@ethersproject/abi": "^5.7.0",

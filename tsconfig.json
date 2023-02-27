@@ -14,7 +14,6 @@
 		"strict": true,
 		"forceConsistentCasingInFileNames": true,
 		"sourceMap": false,
-		"module": "commonjs",
 		"skipLibCheck": true
 	},
 	"include": ["dev/**/*.ts", "dev/*.ts", "dev/*.js", "hardhat.config.ts"]

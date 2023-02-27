@@ -8,16 +8,49 @@ datasource db {
 }
 
 model allowlist {
-  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at DateTime? @default(now()) @db.Timestamptz(6)
-  xp_id      Int?
-  address    String?
-  contract   String?
-  is_owned   Boolean?  @default(false)
-  class_id   Int?      @db.SmallInt
-  token_id   Int?
-  xp         xp?       @relation(fields: [xp_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  class_id         String?
+  contract_address String?
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  id               String    @id(map: "allowlist_new_pkey") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  is_owned         Boolean?  @default(false)
+  token_id         String?
+  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
+  user_address     String?
+  xp_id            Int?
+  xp               xp?       @relation(fields: [xp_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "allowlist_new_xp_id_fkey")
+}
+
+model contract {
+  contract_address String             @id(map: "contracts_pkey")
+  owner            String             @db.VarChar(50)
+  name             String             @db.VarChar(250)
+  created_at       DateTime           @default(now())
+  updated_at       DateTime           @default(now())
+  contract_classes contract_classes[]
+}
+
+model contract_classes {
+  contract_id  String
+  class_id     String
+  metadata_url String   @db.VarChar(250)
+  name         String   @db.VarChar(250)
+  desc         String   @db.VarChar(1000)
+  opensea_url  String   @db.VarChar(250)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now())
+  contract     contract @relation(fields: [contract_id], references: [contract_address], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([contract_id, class_id])
+}
+
+model contract_users {
+  contract_id String
+  user_id     String
+  role        String   @db.VarChar(50)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @default(now())
+
+  @@id([contract_id, user_id])
 }
 
 model org {
@@ -113,24 +146,25 @@ model user {
 }
 
 model xp {
-  id           Int         @id @default(autoincrement())
-  created_at   DateTime?   @default(now()) @db.Timestamptz(6)
-  status       Int?        @db.SmallInt
-  contract     String?
-  xp_code      String?
-  title        String?
-  description  String?
-  series_id    Int?
-  image_url    String?
-  slug         String?
-  uuid         String?     @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  template     String?
-  updated_at   DateTime?   @default(now()) @db.Timestamptz(6)
-  class_id     Int?        @db.SmallInt
-  requirements String?
-  allowlist    allowlist[]
-  series       series?     @relation(fields: [series_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  xp_type      xp_type?    @relation(fields: [xp_code], references: [xp_code], onDelete: NoAction, onUpdate: NoAction)
+  id            Int             @id @default(autoincrement())
+  created_at    DateTime?       @default(now()) @db.Timestamptz(6)
+  status        Int?            @db.SmallInt
+  contract      String?
+  xp_code       String?
+  title         String?
+  description   String?
+  series_id     Int?
+  image_url     String?
+  slug          String?
+  uuid          String?         @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  template      String?
+  updated_at    DateTime?       @default(now()) @db.Timestamptz(6)
+  class_id      String?
+  requirements  String?
+  allowlist     allowlist[]
+  allowlist_old allowlist_old[]
+  series        series?         @relation(fields: [series_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  xp_type       xp_type?        @relation(fields: [xp_code], references: [xp_code], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model xp_type {
@@ -142,48 +176,28 @@ model xp_type {
   xp          xp[]
 }
 
-model contract_users {
-  contract_id String   @map("contract_id")
-  user_id     String   @map("user_id")
-  role        String   @db.VarChar(50)
-  created_at  DateTime @default(now()) @map("created_at")
-  updated_at  DateTime @default(now()) @updatedAt @map("updated_at")
-
-  @@id([contract_id, user_id])
-}
-
-model contract_classes {
-  contract_id  String   @map("contract_id")
-  class_id     String   @map("class_id")
-  metadata_url String   @map("metadata_url") @db.VarChar(250)
-  name         String   @db.VarChar(250)
-  desc         String   @db.VarChar(1000)
-  opensea_url  String   @map("opensea_url") @db.VarChar(250)
-  created_at   DateTime @default(now()) @map("created_at")
-  updated_at   DateTime @default(now()) @updatedAt @map("updated_at")
-  contract     contract @relation(fields: [contract_id], references: [contract_address], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([contract_id, class_id])
-}
-
 model transaction {
-  txnHash          String   @id @default(cuid()) @map("txn_hash")
-  class_id         String   @map("class_id")
+  txn_hash         String   @id
+  class_id         String
   from             String
   to               String
   status           Int      @default(0)
-  created_at       DateTime @default(now()) @map("created_at")
-  updated_at       DateTime @default(now()) @updatedAt @map("updated_at")
+  created_at       DateTime @default(now())
+  updated_at       DateTime @default(now())
   contract_address String?
-
-  @@map("transactions")
+  token_id         String?
 }
 
-model contract {
-  contract_address String             @id(map: "contracts_pkey")
-  owner            String             @db.VarChar(50)
-  name             String             @db.VarChar(250)
-  created_at       DateTime           @default(now())
-  updated_at       DateTime           @default(now())
-  classes          contract_classes[]
+model allowlist_old {
+  id               String    @id(map: "allowlist_pkey") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
+  xp_id            Int?
+  user_address     String?
+  contract_address String?
+  is_owned         Boolean?  @default(false)
+  class_id2        Int?      @db.SmallInt
+  token_id         String?
+  class_id         String?
+  xp               xp?       @relation(fields: [xp_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "allowlist_xp_id_fkey")
 }
