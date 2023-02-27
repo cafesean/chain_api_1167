@@ -1,2 +1,0 @@
-# chainxp-api
-Official
