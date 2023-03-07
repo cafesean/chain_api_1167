@@ -6,7 +6,7 @@
 	"license": "Apache-2.0",
 	"scripts": {
 		"amplify:token": "cd amplify/backend/function/token && tsc -p ./tsconfig.json && cd -",
-		"build": "pnpm compile && pnpm typecheck",
+		"build": "tsc --build tsconfig.json",
 		"clean": "rm -rf src",
 		"compile": "tsup dev/*.ts dev/**/*.ts --out-dir src",
 		"deploy": "rm -rf dist && amplify push",
