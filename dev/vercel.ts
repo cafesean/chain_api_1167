@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 dotenv.config();
-const init = require('./app');
+const init = require('./api/app');
 
 // Require the framework
 import Fastify from "fastify";
