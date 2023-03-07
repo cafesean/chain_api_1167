@@ -61,7 +61,7 @@ export class CollectionService {
     async getClasses(contract_address: any, from: number, to: number) {
         var i;
         var data: JSONObject = {};
-        const [owner] = await ethers.getSigners();
+        // const [owner] = await ethers.getSigners();
 		const contractProxy = await attachContract(contract_address, ProxySol);
 
         try { 
