@@ -1,10 +1,14 @@
 {
-	"version": 2,
-
+	"trailingSlash": false,
+    
 	"rewrites": [
 		{
-			"source": "/(.*)",
-			"destination": "/src/vercel.js"
+			"source": "/token/(.*)/(.*)",
+			"destination": "/api/token.ts"
+		},
+		{
+			"source": "/contract/(.*)/(.*)",
+			"destination": "/api/contract.ts"
 		}
 	]
 }
