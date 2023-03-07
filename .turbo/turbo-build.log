@@ -8,5 +8,50 @@
 
 
 > token@2.0.0 compile /Users/seanliao/Dropbox/_engineering/code/chainxp/web/apps/api
-> tsc
+> tsup dev/*.ts dev/**/*.ts --out-dir src
 
+CLI Building entry: dev/app.ts, dev/config.ts, dev/lambda.ts, dev/vercel.ts, dev/alchemy/index.ts, dev/constants/abi.ts, dev/constants/constants.ts, dev/controllers/app.ts, dev/controllers/collection.ts, dev/controllers/contract.ts, dev/controllers/token.ts, dev/controllers/user.ts, dev/errors/index.ts, dev/plugins/alchemy.ts, dev/plugins/authenticate.ts, dev/plugins/config.ts, dev/plugins/cors.ts, dev/plugins/helmet.ts, dev/plugins/listen.ts, dev/plugins/multipart.ts, dev/plugins/polygon.ts, dev/plugins/prisma.ts, dev/plugins/sensible.ts, dev/plugins/service.ts, dev/polygon/index.ts, dev/polygon/response.ts, dev/polygon/scan.ts, dev/router/index.ts, dev/schema/app.ts, dev/schema/contract.ts, dev/schema/token.ts, dev/schema/user.ts, dev/service/app.ts, dev/service/base.ts, dev/service/collection.ts, dev/service/contract.ts, dev/service/index.ts, dev/service/token.ts, dev/service/user.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v6.6.3
+CLI Target: es2020
+CJS Build start
+CJS src/constants/abi.js          34.14 KB
+CJS src/controllers/app.js        2.17 KB
+CJS src/alchemy/index.js          3.07 KB
+CJS src/plugins/authenticate.js   3.30 KB
+CJS src/errors/index.js           2.29 KB
+CJS src/polygon/index.js          3.26 KB
+CJS src/router/index.js           48.14 KB
+CJS src/config.js                 761.00 B
+CJS src/constants/constants.js    2.38 KB
+CJS src/vercel.js                 57.81 KB
+CJS src/app.js                    48.41 KB
+CJS src/controllers/token.js      5.60 KB
+CJS src/service/app.js            2.16 KB
+CJS src/schema/app.js             1.85 KB
+CJS src/plugins/config.js         2.85 KB
+CJS src/plugins/alchemy.js        4.20 KB
+CJS src/plugins/listen.js         2.00 KB
+CJS src/controllers/user.js       37.69 KB
+CJS src/controllers/collection.js 37.71 KB
+CJS src/controllers/contract.js   4.94 KB
+CJS src/plugins/prisma.js         2.41 KB
+CJS src/plugins/service.js        21.65 KB
+CJS src/plugins/sensible.js       3.90 KB
+CJS src/plugins/helmet.js         26.50 KB
+CJS src/polygon/response.js       775.00 B
+CJS src/schema/token.js           2.48 KB
+CJS src/lambda.js                 57.22 KB
+CJS src/plugins/polygon.js        3.71 KB
+CJS src/schema/contract.js        13.11 KB
+CJS src/service/token.js          2.09 KB
+CJS src/service/index.js          20.48 KB
+CJS src/polygon/scan.js           2.86 KB
+CJS src/service/collection.js     5.16 KB
+CJS src/service/user.js           2.13 KB
+CJS src/service/contract.js       13.95 KB
+CJS src/plugins/cors.js           232.86 KB
+CJS src/service/base.js           1.56 KB
+CJS src/schema/user.js            1.70 KB
+CJS src/plugins/multipart.js      749.11 KB
+CJS ⚡️ Build success in 229ms
