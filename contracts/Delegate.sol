@@ -21,9 +21,10 @@ contract DelegateContract is
     // uint256 public skillCount;
 
     //use format: https://somedomain.com/{id}.json
-    constructor(string memory _name) Base (_name)
+    constructor()
     {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _owner = _msgSender();
+        _setupRole(DEFAULT_ADMIN_ROLE, _owner);
         _setupRole(DEFAULT_ADMIN_ROLE, _owner);
         _setupRole(ADMIN_ROLE, _owner);
         _setupRole(OPS_ROLE, _owner);
@@ -133,7 +134,7 @@ contract DelegateContract is
         public
         view
         virtual
-        override(Base, AccessControl)
+        override(Base, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./Access.sol";
 import "./Base.sol";
 import "./interface/ITemplate.sol";
@@ -14,8 +15,13 @@ contract ProxyContract is Access, Base {
     Counters.Counter tokenCount;
     Counters.Counter attributeCount;
     Counters.Counter skillCount;
+    bool initialized = false;
 
-    constructor(string memory _name) Base(_name) {
+    function initialize(string memory _name, string memory _uri) public initializer {
+        // Base.initialize();
+
+        __ERC1155_init(_uri);
+        __Ownable_init();
         name = _name;
         _owner = _msgSender();
 
@@ -245,7 +251,7 @@ contract ProxyContract is Access, Base {
     //need to override to avoid conflicting instances of supportsInterface
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(Base, AccessControl) returns (bool) {
+    ) public view virtual override(AccessControlUpgradeable, Base) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }

@@ -6,8 +6,10 @@ import { PrismaClient } from "@prisma/client";
 // Migrate these to params
 const ProxySol = "ProxyContract";
 const DelegateSol = "DelegateContract";
-const TemplateSol =
-	"./contracts/template/jetdevs/jetdevs-developer.sol:TemplateContract";
+// const TemplateSol =
+// 	"./contracts/template/jetdevs/jetdevs-developer.sol:TemplateContract";
+const TemplateSol = "contracts/Template.sol:TemplateContract";
+const FactorySol = "ProxyFactory";
 
 async function attachContract(address: string, contract: string) {
 	const contractFactory = await ethers.getContractFactory(contract);
@@ -75,17 +77,15 @@ export class ContractService extends BaseService {
 
 			for (const event of receipt.events) {
 				if (event.eventSignature === "ClassCreated(uint256)") {
-					 const arg = Number(event.args[0]);
-					 class_id = arg.toString();
+					const arg = Number(event.args[0]);
+					class_id = arg.toString();
 				}
 			}
-		} catch (e: any) {
-			throw new Error("Error in adding class: ", e);
+		} catch (e) {
+			throw new Error;
 		}
 		if (reqBody.template != "0x0000000000000000000000000000000000000000") {
-			await contractProxy
-				.connect(owner)
-				.setTemplateContract(1, reqBody.template);
+			await contractProxy.connect(owner).setTemplateContract(1, reqBody.template);
 		}
 
 		const prisma = new PrismaClient();
@@ -111,13 +111,30 @@ export class ContractService extends BaseService {
 		return newXp.id;
 	}
 
+	async cloneProxy(reqBody: any) {
+		const [uuid, factoryAddress, contractAddress] = reqBody;
+		const salt = uuid;
+
+		const factory = await attachContract(factoryAddress, FactorySol);
+
+		const contract = await factory.cloneProxy(contractAddress, salt);
+		// await contract.initialize();
+
+		console.log("Cloned Proxy:", contract.address);
+
+		return contract;
+	}
+
 	async deploySingle(signer: any, sol: string, contractName: string) {
+		console.log("******* in deploySingle - signer: %s  %s", sol, signer.address);
+		
 		const factory = await ethers.getContractFactory(sol);
-		const contract = await factory.deploy(contractName);
+		const contract = await factory.connect(signer).deploy();
 		await contract.deployed();
 
-		console.log("Deployed contract: ", sol, " ", contract.address);
-		console.log("Signer: ", signer.address);
+		console.log("	contract: ", await contract.owner());
+		console.log("	Deployed contract: ", sol, " ", contract.address);
+		console.log("	Signer: ", signer.address);
 
 		return contract;
 	}
@@ -129,34 +146,36 @@ export class ContractService extends BaseService {
 		var contractData;
 
 		const [deployer] = await ethers.getSigners();
-
+		console.log("Deployer: ", deployer.address);
 		try {
+
 			contractDelegate = await this.deploySingle(deployer, DelegateSol, "-"); // #1 Delegate
+
+			console.log("	contractDelegate owner: ", await contractDelegate.owner());
 			addressDelegate = contractDelegate.address;
-			contractProxy = await this.deploySingle(
-				deployer,
-				ProxySol,
-				reqBody.name
-			); // #2 Proxy
+			contractProxy = await this.deploySingle(deployer, ProxySol, reqBody.name); // #2 Proxy
+			await contractProxy.initialize("","");
+
+			// ?await contractProxy.;
 			addressProxy = contractProxy.address;
-			contractTemplate = await this.deploySingle(deployer, TemplateSol, "-"); // #3 Template
-			addressTemplate = contractTemplate.address;
+			console.log("	addressProxy owner: ", await contractProxy.owner());
 
 			console.log("Proxy and Delegate contracts deployed");
+			contractTemplate = await this.deploySingle(deployer, TemplateSol, "-"); // #3 Template
+			addressTemplate = contractTemplate.address;
+			console.log("	contractTemplate owner: ", await contractTemplate.owner());
+
 		} catch (error) {
 			console.log("Deploy Error: ", error);
 			return error;
 		}
 
 		try {
-			await contractProxy
-				.connect(deployer)
-				.setDelegateAddress(addressDelegate);
+			console.log("signer: ", deployer.address);
+			await contractProxy.connect(deployer).setDelegateAddress(addressDelegate);
 			await contractProxy.setDefaultTemplate(addressTemplate);
 			await contractProxy.grantAccess(addressTemplate, "ADMIN_ROLE");
-			await contractProxy
-				.connect(deployer)
-				.setTemplateContract(1, addressTemplate);
+			await contractProxy.connect(deployer).setTemplateContract(1, addressTemplate);
 			console.log("Config done");
 		} catch (error) {
 			console.log("Config Error: ", error);
@@ -275,12 +294,7 @@ export class ContractService extends BaseService {
 		// });
 	}
 
-	async query(
-		organizerId: string,
-		eventId: string,
-		ticketId: string,
-		ticketTypeId: string
-	) {
+	async query(organizerId: string, eventId: string, ticketId: string, ticketTypeId: string) {
 		// const event = await this.prisma.contractEvents.findFirst({
 		//   where:  {
 		//     organizerId,
@@ -317,11 +331,7 @@ export class ContractService extends BaseService {
 		// return contractUser;
 	}
 
-	async setClassMetadata(
-		contract_address: string,
-		class_id: string,
-		metadata_url: string
-	) {
+	async setClassMetadata(contract_address: string, class_id: string, metadata_url: string) {
 		await this.findContractClass(contract_address, class_id);
 
 		const factory = await ethers.getContractFactory(ProxySol);
@@ -346,27 +356,14 @@ export class ContractService extends BaseService {
 		return contract_classes;
 	}
 
-	async mintNFT(
-		contract_address: string,
-		class_id: string,
-		user_address: string
-	) {
+	async mintNFT(contract_address: string, class_id: string, user_address: string) {
 		// await this.findContractClass(contract_address, class_id);
 
 		const [deployer] = await ethers.getSigners();
 		const factory = await ethers.getContractFactory(ProxySol);
-		const factoryContract = factory
-			.connect(deployer)
-			.attach(contract_address);
+		const factoryContract = factory.connect(deployer).attach(contract_address);
 
-		const response = await factoryContract.mint(
-			class_id,
-			user_address,
-			[],
-			[],
-			[],
-			[]
-		);
+		const response = await factoryContract.mint(class_id, user_address, [], [], [], []);
 
 		var token_id;
 		const receipt = await response.wait(); // response is empty if using hardhat network
@@ -420,31 +417,15 @@ export class ContractService extends BaseService {
 		return txn;
 	}
 
-	async transferNFT(
-		contract_address: string,
-		class_id: string,
-		from: string,
-		to: string,
-		amount: number
-	) {
+	async transferNFT(contract_address: string, class_id: string, from: string, to: string, amount: number) {
 		await this.findContractClass(contract_address, class_id);
 
 		const [deployer] = await ethers.getSigners();
 		const factory = await ethers.getContractFactory(ProxySol);
-		const factoryContract = factory
-			.connect(deployer)
-			.attach(contract_address);
+		const factoryContract = factory.connect(deployer).attach(contract_address);
 
-		const response = await factoryContract.safeTransferFrom(
-			from,
-			to,
-			class_id,
-			amount,
-			6
-		);
-		console.log(
-			`transfer NFT from '${from}' to '${to}' Txn: ${response.hash}`
-		);
+		const response = await factoryContract.safeTransferFrom(from, to, class_id, amount, 6);
+		console.log(`transfer NFT from '${from}' to '${to}' Txn: ${response.hash}`);
 		// await response.wait(2);
 
 		// note: add token_id
@@ -462,25 +443,14 @@ export class ContractService extends BaseService {
 		return transaction;
 	}
 
-	async burnNFT(
-		contract_address: string,
-		class_id: string,
-		userAddress: string,
-		amount: number
-	) {
+	async burnNFT(contract_address: string, class_id: string, userAddress: string, amount: number) {
 		await this.findContractClass(contract_address, class_id);
 
 		const [deployer] = await ethers.getSigners();
 		const factory = await ethers.getContractFactory(ProxySol);
-		const factoryContract = factory
-			.connect(deployer)
-			.attach(contract_address);
+		const factoryContract = factory.connect(deployer).attach(contract_address);
 
-		const response = await factoryContract.burn(
-			userAddress,
-			class_id,
-			amount
-		);
+		const response = await factoryContract.burn(userAddress, class_id, amount);
 		console.log(`burn NFT from '${userAddress}' Txn: ${response.hash}`);
 
 		// note: add token_id

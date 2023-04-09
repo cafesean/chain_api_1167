@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
-contract Access is AccessControl {
+contract Access is AccessControlUpgradeable {
     bytes32 internal constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 internal constant SYS_ROLE = keccak256("SYS_ROLE");
     bytes32 internal constant OPS_ROLE = keccak256("OPS_ROLE");

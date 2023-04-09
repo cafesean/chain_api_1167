@@ -73,7 +73,7 @@ contract Migrate is
 
     IProxy proxy;
 
-    constructor(address _proxyAddress) Base ("")
+    constructor(address _proxyAddress)
     {
 
     }
@@ -136,7 +136,7 @@ contract Migrate is
         public
         view
         virtual
-        override(Base, AccessControl)
+        override(Base, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

@@ -1,21 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
-import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-// import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 // import "@openzeppelin/contracts/utils/Base64.sol";
 import "./interface/ITemplate.sol";
 import "./Access.sol";
 import "hardhat/console.sol";
 
 contract Base is
-    ERC1155,
-    ERC1155Supply,
-    ERC1155Burnable,
-    Ownable,
+    Initializable,
+    ERC1155Upgradeable,
+    ERC1155BurnableUpgradeable,
+    ERC1155SupplyUpgradeable,
+    OwnableUpgradeable,
     Access
 {
     using Strings for uint256;
@@ -87,9 +90,14 @@ contract Base is
     mapping(uint256 => mapping(uint256 => string)) public userAttributes; //user => (attributeID => value)
     mapping(uint256 => mapping(uint256 => uint256)) public userSkills; //user => (skill => rating)
     
-    constructor(string memory _name) ERC1155 ("https://gateway.pinata.cloud/ipfs/QmSir1V4yC9wE3XDspjw1jPdRSx6FLGLfcsKuZxj11XsEZ/default.json") {
-    }
+    // constructor(string memory _name) ERC1155 ("https://gateway.pinata.cloud/ipfs/QmSir1V4yC9wE3XDspjw1jPdRSx6FLGLfcsKuZxj11XsEZ/default.json") {
+    // }
 
+    // function initialize() public onlyInitializing {
+ 
+    // }
+
+    
     // function owner() public view returns (address) {
     //     return _owner;
     // }
@@ -175,7 +183,7 @@ contract Base is
         uint256[] memory ids,
         uint256[] memory amounts,
         bytes memory data
-    ) internal override (ERC1155, ERC1155Supply) {
+    ) internal override (ERC1155Upgradeable, ERC1155SupplyUpgradeable) {
         super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
     }
 
@@ -195,10 +203,9 @@ contract Base is
         public
         view
         virtual
-        override(ERC1155, AccessControl)
+        override(ERC1155Upgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
     }
-
 }

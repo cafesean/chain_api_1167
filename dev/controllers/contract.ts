@@ -16,7 +16,7 @@ import {
 } from "../schema/contract";
 
 export default async function contractController(fastify: FastifyInstance) {
-	fastify.put(
+	fastify.post(
 		"/deploy",
 		deployContractSchema(fastify),
 		async (request: any, resp: any) => {
@@ -32,6 +32,22 @@ export default async function contractController(fastify: FastifyInstance) {
 		}
 	);
 
+
+	fastify.put(
+		"/clone",
+		deployContractSchema(fastify),
+		async (request: any, resp: any) => {
+			// const { name,  } = request.body;
+
+			const contract = await fastify.service.contract.cloneProxy(
+				request.body
+			);
+
+			resp.success({
+				contract_id: contract,
+			});
+		}
+	);
 	// fastify.post(
 	//   '/:contract_id/register/:class_id',
 	//   registerContractEventSchema(fastify),
