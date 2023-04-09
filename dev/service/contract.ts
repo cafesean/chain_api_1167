@@ -82,7 +82,7 @@ export class ContractService extends BaseService {
 				}
 			}
 		} catch (e) {
-			throw new Error;
+			throw new Error();
 		}
 		if (reqBody.template != "0x0000000000000000000000000000000000000000") {
 			await contractProxy.connect(owner).setTemplateContract(1, reqBody.template);
@@ -117,26 +117,92 @@ export class ContractService extends BaseService {
 
 		const factory = await attachContract(factoryAddress, FactorySol);
 
-		const contract = await factory.cloneProxy(contractAddress, salt);
+		const response = await factory.cloneProxy(contractAddress, salt);
 		// await contract.initialize();
 
-		console.log("Cloned Proxy:", contract.address);
+		var token_id;
+		const receipt = await response.wait(); // response is empty if using hardhat network
+		console.log("response=", await receipt.events);
+		for (const event of receipt.events) {
+			if (event.event === "ProxyCloned") {
+				token_id = Number(event.args.id);
+			}
+		}
 
-		return contract;
+		// const txn = [
+		// 	{
+		// 		txn_hash: response.hash, // must be unique
+		// 		contract_address, // required
+		// 		class_id, // must be string
+		// 		token_id: token_id + "", // must be string
+		// 		from: deployer.address, // required
+		// 		to: user_address, // required
+		// 		status: -1,
+		// 	},
+		// ];
+
+		// for (const t of txn) {
+		// 	const transaction = await prisma.transaction.create({
+		// 		data: t,
+		// 	});
+		// 	console.log(`Created transaction with hash: ${transaction.txn_hash}`);
+		// }
+
+		// return txn;
+		return response;
 	}
 
 	async deploySingle(signer: any, sol: string, contractName: string) {
 		console.log("******* in deploySingle - signer: %s  %s", sol, signer.address);
-		
+
 		const factory = await ethers.getContractFactory(sol);
 		const contract = await factory.connect(signer).deploy();
 		await contract.deployed();
 
-		console.log("	contract: ", await contract.owner());
+		console.log("	contract owner: ", await contract.owner());
 		console.log("	Deployed contract: ", sol, " ", contract.address);
 		console.log("	Signer: ", signer.address);
 
 		return contract;
+	}
+
+	async deployFactory() {
+		var contractFactory;
+		var addressFactory;
+
+		const [deployer] = await ethers.getSigners();
+		console.log("Deployer: ", deployer.address);
+		try {
+			contractFactory = await this.deploySingle(deployer, FactorySol, "-");
+
+			console.log("	contractFactory owner: ", await contractFactory.owner());
+			console.log("	ProxyFactory address: ", contractFactory.address);
+			addressFactory = contractFactory.address;
+			await contractFactory.initialize();
+
+			const utils = ethers.utils;
+
+			const salt = utils.formatBytes32String("123");
+
+			// test clone
+			const clonedContract = await contractFactory.cloneProxy("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", salt);
+
+			var cloneAddress;
+			const receipt = await clonedContract.wait(); // response is empty if using hardhat network
+			console.log("response=", await receipt.events);
+			for (const event of receipt.events) {
+				if (event.event === "ProxyCloned") {
+					cloneAddress = event.args.cloneAddress;
+				}
+			}
+
+			console.log("Cloned Proxy:", cloneAddress);
+		} catch (error) {
+			console.log("Deploy Error: ", error);
+			return error;
+		}
+
+		return { addressFactory };
 	}
 
 	async deployAll(reqBody: any) {
@@ -148,13 +214,12 @@ export class ContractService extends BaseService {
 		const [deployer] = await ethers.getSigners();
 		console.log("Deployer: ", deployer.address);
 		try {
-
 			contractDelegate = await this.deploySingle(deployer, DelegateSol, "-"); // #1 Delegate
 
 			console.log("	contractDelegate owner: ", await contractDelegate.owner());
 			addressDelegate = contractDelegate.address;
 			contractProxy = await this.deploySingle(deployer, ProxySol, reqBody.name); // #2 Proxy
-			await contractProxy.initialize("","");
+			await contractProxy.initialize("", "");
 
 			// ?await contractProxy.;
 			addressProxy = contractProxy.address;
@@ -164,7 +229,6 @@ export class ContractService extends BaseService {
 			contractTemplate = await this.deploySingle(deployer, TemplateSol, "-"); // #3 Template
 			addressTemplate = contractTemplate.address;
 			console.log("	contractTemplate owner: ", await contractTemplate.owner());
-
 		} catch (error) {
 			console.log("Deploy Error: ", error);
 			return error;

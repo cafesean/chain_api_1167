@@ -48,6 +48,22 @@ export default async function contractController(fastify: FastifyInstance) {
 			});
 		}
 	);
+
+
+	fastify.post(
+		"/deployFactory",
+		deployContractSchema(fastify),
+		async (request: any, resp: any) => {
+			// const { name,  } = request.body;
+
+			const contract = await fastify.service.contract.deployFactory();
+
+			resp.success({
+				contract_id: contract,
+			});
+		}
+	);
+
 	// fastify.post(
 	//   '/:contract_id/register/:class_id',
 	//   registerContractEventSchema(fastify),
