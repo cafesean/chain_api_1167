@@ -1,0 +1,52 @@
+### Step 1 deploy new contracts (for cloning)
+POST http://localhost:4000/contract/deploy HTTP/1.1
+Content-Type: 'application/json'
+
+{
+    "name": "None"
+}
+
+### Step 2 deploy factory
+
+POST http://localhost:4000/contract/deployFactory HTTP/1.1
+Content-Type: 'application/json'
+
+{
+    "name": "-",
+    "proxy_address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+}
+
+### Step 3 clone
+
+POST http://localhost:4000/contract/clone HTTP/1.1
+Content-Type: 'application/json'
+
+{
+    "org_id": 1,
+    "uuid": "0000-11111-10",
+    "name": "Series 10",
+    "factory_address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+    "contract_address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "delegate_address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "description": "ChainXP Series #8",
+    "image_url": "clone-8.png",
+    "slug": "clone-8",
+    "requirements": "Nothing."
+}
+
+### Step 4a addClass (contract)
+POST http://localhost:4000/contract/0x9c774fe3a8b99902731513e218332c0aeb1573d6/class HTTP/1.1
+Content-Type: 'application/json'
+
+{
+    "series_id": 130,
+    "name": "Class 1",
+    "title": "Series Class 1",
+    "desc": "Series Class 1 description",
+    "image_url": "asdfasf",
+    "slug": "class-1",
+    "template": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9"
+}
+
+### Step 5 mint from API via contract service
+PUT http://localhost:4000/contract/0x9c774fe3a8b99902731513e218332c0aeb1573d6/mint/1?address=0x77fC1370F4D88b4446cc5d2a2FDAd2F91AA982D0 HTTP/1.1
