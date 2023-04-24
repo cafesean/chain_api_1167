@@ -46,4 +46,6 @@ interface IProxy {
     function _setClass (uint256 _classId, string calldata _name, string calldata _description, string calldata _baseUri, address _templateAddress) external;
     // function _setStyles(uint256 _classId, string[6] memory _styles) external;
     function transferOwnership(address _address) external;
+    function registerClone(string memory _uuid, address _clone) external;
+    function deregisterClone(string memory _uuid) external;
 }

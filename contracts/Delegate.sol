@@ -39,6 +39,7 @@ contract DelegateContract is
         string memory _baseUri,
         address _templateAddress
     ) public onlyOps {
+        console.log("In setClass");
         if (classes[_classId].id == 0) {
             classes[_classId].id = _classId;
         }

@@ -98,4 +98,21 @@ export default async function collectionController(fastify: FastifyInstance) {
 
         }
 	)
+
+	fastify.post(
+		"/:contract_id/class",
+		async (request: any, resp: any) => {
+			const { contract_id } = request.params;
+			// const { name, desc, image_url, slug } = request.body;
+console.log("In addClass route")
+			const contractClass = await fastify.service.collection.addClass(
+				contract_id,
+				request.body
+			);
+
+			resp.success({
+				class_id: contractClass,
+			});
+		}
+	);
 }

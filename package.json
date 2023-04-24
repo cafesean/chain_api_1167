@@ -15,7 +15,10 @@
 		"dev": "pnpm start:dev",
 		"start:build": "node src/dev/app.cjs",
 		"start:dev": "tsx watch dev/app.ts",
-		"typecheck": "tsc -b"
+		"typecheck": "tsc -b",
+		"gen": "prisma generate",
+		"push": "prisma db push",
+		"pull": "prisma db"
 	},
 	"dependencies": {
 		"@ethersproject/bytes": "^5.0.0",

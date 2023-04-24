@@ -7,6 +7,7 @@ interface JSONObject {
 }
 
 async function attachContract(address: string, contract: string) {
+    
 	const contractFactory = await ethers.getContractFactory(contract);
 	const attachedContract = contractFactory.attach(address);
 
@@ -89,17 +90,21 @@ export class CollectionService {
 
 
 
-    async addClass(contract: any, id:number, name:string, description:string, image:string, classUri:any) {
-        try {        
-            await contract.addClass(0, contract, id, name, description, image, classUri);
-            return "success";
-        } catch (err) {
-            return(err);
-        }
+    async addClass(contract_address: string, reqBody: any) {
+		let data: JSONObject = {};
+		let class_id = "0";
+		// const [owner] = await ethers.getSigners();
+		const contractProxy = await attachContract(contract_address, ProxySol);
+		try {
+			data["class"] = await contractProxy._setClass(class_id, reqBody.name, reqBody.desc, "", reqBody.template);
+			return JSON.stringify(data);
+		} catch (err) {
+			return err;
+		}
     }
 
     async setClass(contract: any, id:number, name:string, description:string, image:string, classUri:any) {
-        var data: JSONObject = {};
+        let data: JSONObject = {};
         try {      
             data["class"] = await contract._setClass(id, name, description, image, classUri);
             return JSON.stringify(data);

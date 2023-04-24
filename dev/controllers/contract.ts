@@ -33,9 +33,8 @@ export default async function contractController(fastify: FastifyInstance) {
 	);
 
 
-	fastify.put(
+	fastify.post(
 		"/clone",
-		deployContractSchema(fastify),
 		async (request: any, resp: any) => {
 			// const { name,  } = request.body;
 
@@ -56,7 +55,7 @@ export default async function contractController(fastify: FastifyInstance) {
 		async (request: any, resp: any) => {
 			// const { name,  } = request.body;
 
-			const contract = await fastify.service.contract.deployFactory();
+			const contract = await fastify.service.contract.deployFactory(request.body);
 
 			resp.success({
 				contract_id: contract,
@@ -129,13 +128,13 @@ export default async function contractController(fastify: FastifyInstance) {
 	//   }
 	// );
 
-	fastify.put(
+	fastify.post(
 		"/:contract_id/class",
 		addContractClassSchema(fastify),
 		async (request: any, resp: any) => {
 			const { contract_id } = request.params;
 			// const { name, desc, image_url, slug } = request.body;
-
+console.log("In addClass route")
 			const contractClass = await fastify.service.contract.addClass(
 				contract_id,
 				request.body

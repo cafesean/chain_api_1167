@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+// import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./Access.sol";
 import "./Base.sol";
 import "./interface/ITemplate.sol";
@@ -18,8 +19,7 @@ contract ProxyContract is Access, Base {
     bool initialized = false;
 
     function initialize(string memory _name, string memory _uri) public initializer {
-        // Base.initialize();
-
+        Base.initializeBase();
         __ERC1155_init(_uri);
         __Ownable_init();
         name = _name;
@@ -37,11 +37,9 @@ contract ProxyContract is Access, Base {
         // ATTR_XP = 4;
         // ATTR_DATE = 5;
         // ATTR_URL = 6;
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(DEFAULT_ADMIN_ROLE, _owner);
         _setupRole(ADMIN_ROLE, _owner);
         _setupRole(OPS_ROLE, _owner);
-        _setupRole(SYS_ROLE, _owner);
     }
 
     //see if this forces refresh on all classesURI
@@ -52,10 +50,11 @@ contract ProxyContract is Access, Base {
         string calldata _baseUri,
         address _templateAddress
     ) public onlyOps returns (uint256 id) {
+        console.log("In _setClass");
         if (_classId == 0) {
             classesCount.increment();
             _classId = classesCount.current();
-            emit ClassCreated(_classId);
+            emit ClassCreated(_name, _classId);
         }
         (bool success, ) = DelegateAddress.delegatecall(
             abi.encodeWithSelector(
@@ -67,6 +66,8 @@ contract ProxyContract is Access, Base {
                 _templateAddress
             )
         );
+
+        console.log("new _classId", _classId);
         return _classId;
     }
 
@@ -79,7 +80,7 @@ contract ProxyContract is Access, Base {
         if (_skillId == 0) {
             skillCount.increment();
             _skillId = skillCount.current();
-            emit SkillCreated(_skillId);
+            emit SkillCreated(_name, _skillId);
         }
         (bool success, ) = DelegateAddress.delegatecall(
             abi.encodeWithSelector(
@@ -101,7 +102,7 @@ contract ProxyContract is Access, Base {
         if (_attributeId == 0) {
             attributeCount.increment();
             _attributeId = attributeCount.current();
-            emit AttributeCreated(_attributeId);
+            emit AttributeCreated(_name, _attributeId);
         }
         (bool success, ) = DelegateAddress.delegatecall(
             abi.encodeWithSelector(
@@ -141,7 +142,9 @@ contract ProxyContract is Access, Base {
     ) public view virtual override returns (string memory) {
         address _templateAddress = classes[users[_tokenId].classId]
             .templateAddress;
-
+console.log("In uri: _tokenId = %s", _tokenId);
+console.log("In uri: _templateAddress = %s", _templateAddress);
+console.log("DefaultTemplate = %s", DefaultTemplate);
         return
             ITemplateContract(
                 _templateAddress == address(0x0)
@@ -161,8 +164,12 @@ contract ProxyContract is Access, Base {
     ) public onlyOps returns (uint256 id) {
         uint256 _tokenId;
         tokenCount.increment();
+        console.log("Before mintSingle _classId: %s", _classId);
+        console.log("Before mintSingle tokenCount: %s", tokenCount.current());
         _tokenId = mintSingle(_to, tokenCount.current(), _classId);
-        emit TokenCreated(_tokenId);
+
+        console.log("After mintSingle _tokenId: %s", _tokenId);
+        emit TokenCreated(_to, _tokenId);
         //set empty attributes and skills
         setAttributes(
             tokenCount.current(),
@@ -226,18 +233,44 @@ contract ProxyContract is Access, Base {
 
     function setDefaultTemplate(address _address) public onlyAdmin {
         DefaultTemplate = _address;
+
+        console.log("DefaultTemplate: %s", DefaultTemplate);
+        console.log("This address: %s", address(this));
+    }
+
+    function getDefaultTemplate() public view returns (address) {
+
+        console.log("DefaultTemplate: %s", DefaultTemplate);
+        return DefaultTemplate;
     }
 
     function setTemplateContract(
         uint256 _classId,
         address _address
-    ) public onlyAdmin {
+    ) public onlyOps returns (bool) {
         require(_address != address(0x0));
         classes[_classId].templateAddress = _address;
 
         //Request template contract to add this contract
         ITemplateContract(classes[_classId].templateAddress)
             .authorizeCallingContract(_msgSender(), address(this));
+
+        console.log("setTemplateContract: %s", _address);
+        return true;
+    }
+
+    function registerFactory(address _address) public onlyAdmin {
+        _setupRole(ADMIN_ROLE, _address);
+    }
+
+    function registerClone(string memory uuid, address _clone) public onlyAdmin {
+        clones[uuid] = _clone;
+        _setupRole(OPS_ROLE, _clone);
+    }
+
+    function deregisterClone(string memory uuid) public onlyAdmin {
+        _revokeRole(OPS_ROLE, clones[uuid]);
+        delete clones[uuid];
     }
 
     function _setStyles(

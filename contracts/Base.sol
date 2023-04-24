@@ -13,8 +13,7 @@ import "./interface/ITemplate.sol";
 import "./Access.sol";
 import "hardhat/console.sol";
 
-contract Base is
-    Initializable,
+contract Base is Initializable,
     ERC1155Upgradeable,
     ERC1155BurnableUpgradeable,
     ERC1155SupplyUpgradeable,
@@ -59,10 +58,10 @@ contract Base is
 
     //event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event ClassURI(string classUri, uint256 indexed classId);
-    event TokenCreated(uint256);
-    event ClassCreated(uint256);
-    event SkillCreated(uint256);
-    event AttributeCreated(uint256);
+    event TokenCreated(address userAddress, uint256 indexed tokenId);
+    event ClassCreated(string name, uint256 indexed classId);
+    event SkillCreated(string name, uint256 indexed skillId);
+    event AttributeCreated(string name, uint256 indexed attributeId);
 
     string public name;
     string public description;
@@ -79,7 +78,8 @@ contract Base is
     uint8 ATTR_YEAR;
     uint8 ATTR_AVAIL;
 
-    mapping(address => address) public relay; //calling address => delegate address
+    // mapping(address => address) public relay; //calling address => delegate address
+    mapping(string => address) public clones; // org_uuid => clone address
     mapping(uint256 => string) public tokenURI;
     mapping(uint256 => string) public classURI;
     mapping(uint256 => string) public roles;
@@ -93,9 +93,10 @@ contract Base is
     // constructor(string memory _name) ERC1155 ("https://gateway.pinata.cloud/ipfs/QmSir1V4yC9wE3XDspjw1jPdRSx6FLGLfcsKuZxj11XsEZ/default.json") {
     // }
 
-    // function initialize() public onlyInitializing {
- 
-    // }
+    function initializeBase() public onlyInitializing {
+        baseURI = "https://www.test.com/";
+        DefaultTemplate = 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9;
+    }
 
     
     // function owner() public view returns (address) {
@@ -125,7 +126,7 @@ contract Base is
         _setURI("n");
     }
 
-    function mintSingle (address _to, uint256 _newTokenId, uint256 _classId) public onlyAdmin returns (uint256) {        
+    function mintSingle (address _to, uint256 _newTokenId, uint256 _classId) public onlyOps returns (uint256) {        
             _mint(_to, _newTokenId, 1, "");
             users[_newTokenId].id = _newTokenId;
             users[_newTokenId].account = _to;
@@ -134,7 +135,7 @@ contract Base is
             
     }
 
-    function burn(address _account, uint256 _id, uint256 _amount) override public onlyAdmin {
+    function burn(address _account, uint256 _id, uint256 _amount) override public onlyOps {
         require(balanceOf(_account, _id) > 0, "No token");
         users[_id].classId = 0;
         tokenURI[_id] = uri(_id);
@@ -142,7 +143,7 @@ contract Base is
         _burn(_account, _id, _amount);
     }
 
-    function burnBatchById(uint256[] memory _ids) public onlyAdmin {
+    function burnBatchById(uint256[] memory _ids) public onlyOps {
         updateUsersClass(_ids, 0);
         for (uint256 i = 0; i < _ids.length; i++) {
             if (balanceOf(users[_ids[i]].account, _ids[i]) != 0) {

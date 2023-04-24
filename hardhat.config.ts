@@ -4,6 +4,7 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
+const hardhat_network_rpc_url = process.env.hardhat_network_rpc_url;
 const NETWORK_MAINNET_RPC_URL = process.env.ALCHEMY_MAINNET_URL;
 const NETWORK_TESTNET_RPC_URL = process.env.ALCHEMY_TESTNET_URL;
 const TESTNET_PRIVATE_KEY = process.env.TESTNET_PRIVATE_KEY;
@@ -31,7 +32,10 @@ const config: HardhatUserConfig = {
 			chainId: 137,
 		},
 		hardhat: {
-			allowUnlimitedContractSize: false,
+			allowUnlimitedContractSize: true,
+		},
+		localhost : {
+			url: hardhat_network_rpc_url,
 		},
 	},
 	paths: {

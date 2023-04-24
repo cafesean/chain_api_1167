@@ -3,6 +3,8 @@ import { ethers } from "hardhat";
 import * as errors from "../errors";
 import { PrismaClient } from "@prisma/client";
 
+const prisma = new PrismaClient();
+
 // Migrate these to params
 const ProxySol = "ProxyContract";
 const DelegateSol = "DelegateContract";
@@ -11,9 +13,14 @@ const DelegateSol = "DelegateContract";
 const TemplateSol = "contracts/Template.sol:TemplateContract";
 const FactorySol = "ProxyFactory";
 
-async function attachContract(address: string, contract: string) {
+async function attachContract(signer: any, address: string, contract: string) {
 	const contractFactory = await ethers.getContractFactory(contract);
-	const attachedContract = contractFactory.attach(address);
+	const attachedContract = contractFactory.connect(signer).attach(address);
+	// const attachedContract = contractFactory.attach(address);
+
+	console.log("Attached contract name: ", contract);
+	console.log("Attached contract: ", attachedContract.address);
+	console.log("Attached owner: ", await attachedContract.owner());
 
 	return attachedContract;
 }
@@ -56,16 +63,23 @@ export class ContractService extends BaseService {
 		// console.log("contract_abi: ", JSON.stringify(abiData?.contract_abi));
 		const [owner] = await ethers.getSigners();
 		// const contractDelegate = await attachContract(contract_address, DelegateSol);
-		const contractProxy = await attachContract(contract_address, ProxySol);
+
+		console.log("Attaching contract: ", contract_address);
+		const contractProxy = await attachContract(owner, contract_address, ProxySol);
+
+		console.log("Attached");
+		console.log("contractProxy contractURI: ", await contractProxy.contractURI());
 
 		// const contractDelegate = new ethers.Contract(DelegateSol, abi, owner);
 		// const proxyFactory = await ethers.getContractFactory("Proxy");
 
-		console.log("contract_address: ", contract_address);
 		let class_id = "0";
 
 		console.log("request body: ", reqBody);
+
 		try {
+			// console.log("uri:", await contractProxy.uri(1));
+
 			const response = await contractProxy._setClass(
 				Number(class_id),
 				reqBody.name,
@@ -74,21 +88,20 @@ export class ContractService extends BaseService {
 				reqBody.template
 			);
 			const receipt = await response.wait();
-
+			console.log("Receipt: ", receipt);
 			for (const event of receipt.events) {
-				if (event.eventSignature === "ClassCreated(uint256)") {
-					const arg = Number(event.args[0]);
+				if (event.eventSignature === "ClassCreated(string,uint256)") {
+					const arg = event.args[1]; // uint256 value is 2nd arg in array as hex value
 					class_id = arg.toString();
 				}
 			}
 		} catch (e) {
-			throw new Error();
+			console.log(e);
+			throw new Error("Error in _setClass");
 		}
-		if (reqBody.template != "0x0000000000000000000000000000000000000000") {
-			await contractProxy.connect(owner).setTemplateContract(1, reqBody.template);
-		}
-
-		const prisma = new PrismaClient();
+		// if (reqBody.template != "0x0000000000000000000000000000000000000000") {
+		// 	await contractProxy.connect(owner).setTemplateContract(1, reqBody.template);
+		// }
 
 		const newXp = await prisma.series.update({
 			where: {
@@ -99,6 +112,7 @@ export class ContractService extends BaseService {
 					create: {
 						// contract: contract_address,
 						class_id,
+						contract_address,
 						title: reqBody.name,
 						description: reqBody.desc,
 						image_url: reqBody.image_url,
@@ -106,69 +120,148 @@ export class ContractService extends BaseService {
 					},
 				},
 			},
+			include: {
+				xp: {
+					select: {
+						id: true,
+					},
+				},
+			},
 		});
 
-		return newXp.id;
+		return newXp.xp;
 	}
 
 	async cloneProxy(reqBody: any) {
-		const [uuid, factoryAddress, contractAddress] = reqBody;
-		const salt = uuid;
+		const {
+			uuid,
+			factory_address,
+			contract_address,
+			org_id,
+			name,
+			description,
+			requirements,
+			slug,
+			image_url,
+		} = reqBody;
+		const utils = ethers.utils;
+		const salt = utils.formatBytes32String(uuid);
+		const [owner] = await ethers.getSigners();
 
-		const factory = await attachContract(factoryAddress, FactorySol);
+		const contractFactory = await attachContract(owner, factory_address, FactorySol);
 
-		const response = await factory.cloneProxy(contractAddress, salt);
-		// await contract.initialize();
+		// salt MUST be unique for eip-1167 cloning to work
+		const response = await contractFactory.cloneProxy(contract_address, salt);
 
-		var token_id;
+		let addressClone;
 		const receipt = await response.wait(); // response is empty if using hardhat network
-		console.log("response=", await receipt.events);
+		// console.log("response=", await receipt.events);
 		for (const event of receipt.events) {
 			if (event.event === "ProxyCloned") {
-				token_id = Number(event.args.id);
+				addressClone = event.args.cloneAddress;
 			}
 		}
 
-		// const txn = [
-		// 	{
-		// 		txn_hash: response.hash, // must be unique
-		// 		contract_address, // required
-		// 		class_id, // must be string
-		// 		token_id: token_id + "", // must be string
-		// 		from: deployer.address, // required
-		// 		to: user_address, // required
-		// 		status: -1,
-		// 	},
-		// ];
+		// initialize clone
+		const cloneContract = await attachContract(owner, addressClone, ProxySol);
+		const initResponse = await cloneContract.initialize("", "");
 
-		// for (const t of txn) {
-		// 	const transaction = await prisma.transaction.create({
-		// 		data: t,
-		// 	});
-		// 	console.log(`Created transaction with hash: ${transaction.txn_hash}`);
-		// }
+		console.log("initResponse: ", initResponse);
 
-		// return txn;
-		return response;
+		// grant access to delegate
+		// const delegateContract = await attachContract(owner, delegate_address, DelegateSol);
+		// const delegateResponse = await delegateContract.grantAccess(addressClone, "OPS_ROLE");
+
+		// console.log("delegateResponse: ", delegateResponse);
+
+		// const prisma = new PrismaClient();
+
+		let contractData;
+		try {
+			contractData = await prisma.contract.create({
+				data: {
+					name: name,
+					type: "clone",
+					contract_address: addressClone,
+					owner_address: owner.address,
+				},
+			});
+		} catch (error) {
+			console.log("contractData Error: ", error);
+		}
+
+		let seriesData;
+		try {
+			seriesData = await prisma.org.update({
+				where: {
+					id: org_id,
+				},
+				data: {
+					series: {
+						create: {
+							contract_address: addressClone,
+							owner: owner.address,
+							title: name,
+							description: description,
+							requirements: requirements,
+							image_url: image_url,
+							slug: slug,
+						},
+					},
+				},
+				include: {
+					series: {
+						select: {
+							id: true, // Include the new series id in the returned data
+						},
+					},
+				},
+			});
+		} catch (error) {
+			console.log("seriesData Error: ", error);
+		}
+		// return new id of series created
+
+		console.log("seriesData: ", seriesData);
+		return addressClone;
 	}
 
 	async deploySingle(signer: any, sol: string, contractName: string) {
-		console.log("******* in deploySingle - signer: %s  %s", sol, signer.address);
+		console.log("******* in deploySingle: %s", sol);
 
 		const factory = await ethers.getContractFactory(sol);
-		const contract = await factory.connect(signer).deploy();
-		await contract.deployed();
+		const contract = await factory
+			.connect(signer)
+			.deploy()
+			.then((contract) => contract.deployed());
 
 		console.log("	contract owner: ", await contract.owner());
 		console.log("	Deployed contract: ", sol, " ", contract.address);
 		console.log("	Signer: ", signer.address);
 
+		// const prisma = new PrismaClient();
+
+		let contractData;
+
+		try {
+			contractData = await prisma.contract.create({
+				data: {
+					name: sol,
+					contract_address: contract.address,
+					owner_address: signer.address,
+				},
+			});
+		} catch (error) {
+			console.log("contractData Error: ", error);
+		}
 		return contract;
 	}
 
-	async deployFactory() {
+	async deployFactory(reqBody: any) {
 		var contractFactory;
 		var addressFactory;
+
+		const { proxy_address } = reqBody;
 
 		const [deployer] = await ethers.getSigners();
 		console.log("Deployer: ", deployer.address);
@@ -180,23 +273,29 @@ export class ContractService extends BaseService {
 			addressFactory = contractFactory.address;
 			await contractFactory.initialize();
 
-			const utils = ethers.utils;
+			// attach proxy
+			const contractProxy = await attachContract(deployer, proxy_address, ProxySol);
 
-			const salt = utils.formatBytes32String("123");
+			//register factory
+			await contractProxy.registerFactory(contractFactory.address);
 
-			// test clone
-			const clonedContract = await contractFactory.cloneProxy("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", salt);
+			// const utils = ethers.utils;
 
-			var cloneAddress;
-			const receipt = await clonedContract.wait(); // response is empty if using hardhat network
-			console.log("response=", await receipt.events);
-			for (const event of receipt.events) {
-				if (event.event === "ProxyCloned") {
-					cloneAddress = event.args.cloneAddress;
-				}
-			}
+			// const salt = utils.formatBytes32String("123");
 
-			console.log("Cloned Proxy:", cloneAddress);
+			// // test clone
+			// const clonedContract = await contractFactory.cloneProxy("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", salt);
+
+			// var cloneAddress;
+			// const receipt = await clonedContract.wait(); // response is empty if using hardhat network
+			// console.log("response=", await receipt.events);
+			// for (const event of receipt.events) {
+			// 	if (event.event === "ProxyCloned") {
+			// 		cloneAddress = event.args.cloneAddress;
+			// 	}
+			// }
+
+			// console.log("Cloned Proxy:", cloneAddress);
 		} catch (error) {
 			console.log("Deploy Error: ", error);
 			return error;
@@ -209,7 +308,7 @@ export class ContractService extends BaseService {
 		var addressTemplate, addressDelegate;
 		var contractDelegate, contractProxy, contractTemplate;
 		var addressProxy, addressTemplate, addressDelegate;
-		var contractData;
+		// var contractData;
 
 		const [deployer] = await ethers.getSigners();
 		console.log("Deployer: ", deployer.address);
@@ -237,7 +336,10 @@ export class ContractService extends BaseService {
 		try {
 			console.log("signer: ", deployer.address);
 			await contractProxy.connect(deployer).setDelegateAddress(addressDelegate);
-			await contractProxy.setDefaultTemplate(addressTemplate);
+			const setDefaultTemplate = await contractProxy.setDefaultTemplate(addressTemplate);
+
+			console.log("setDefaultTemplate: ", setDefaultTemplate);
+
 			await contractProxy.grantAccess(addressTemplate, "ADMIN_ROLE");
 			await contractProxy.connect(deployer).setTemplateContract(1, addressTemplate);
 			console.log("Config done");
@@ -246,35 +348,7 @@ export class ContractService extends BaseService {
 			return error;
 		}
 
-		const prisma = new PrismaClient();
-
-		try {
-			contractData = await prisma.org.update({
-				where: {
-					id: reqBody.org_id,
-				},
-				data: {
-					series: {
-						create: {
-							contract: addressProxy,
-							contract_address: addressProxy,
-							delegate_address: addressDelegate,
-							template_address: addressTemplate,
-							owner: deployer.address,
-							title: reqBody.name,
-							description: reqBody.description,
-							requirements: reqBody.requirements,
-							image_url: reqBody.image_url,
-							slug: reqBody.slug,
-						},
-					},
-				},
-			});
-		} catch (error) {
-			console.log("contractData Error: ", error);
-			return error;
-		}
-		return { contractData };
+		return { addressProxy };
 	}
 
 	// async deploy(reqBody: any) {
@@ -424,23 +498,32 @@ export class ContractService extends BaseService {
 		// await this.findContractClass(contract_address, class_id);
 
 		const [deployer] = await ethers.getSigners();
-		const factory = await ethers.getContractFactory(ProxySol);
-		const factoryContract = factory.connect(deployer).attach(contract_address);
+		const contractProxy = await attachContract(deployer, contract_address, ProxySol);
 
-		const response = await factoryContract.mint(class_id, user_address, [], [], [], []);
+		// const factory = await ethers.getContractFactory(ProxySol);
+		// const factoryContract = factory.attach(contract_address);
 
-		var token_id;
-		const receipt = await response.wait(); // response is empty if using hardhat network
-		console.log("response=", await receipt.events);
+		let response;
+		try {
+			response = await contractProxy.mint(Number(class_id), user_address, [], [], [], []);
+		} catch (e) {
+			console.log(e);
+			throw e;
+		}
+		let token_id;
+
+		const receipt = await response.wait();
+		console.log("Receipt: ", receipt);
 		for (const event of receipt.events) {
-			if (event.event === "TransferSingle") {
-				token_id = Number(event.args.id);
+			if (event.eventSignature === "TokenCreated(address,uint256)") {
+				const arg = event.args[1]; // uint256 value is 2nd arg in array as hex value
+				token_id = arg.toString();
 			}
 		}
 
-		// console.log("token_id = ", token_id);
+		console.log("token_id = ", token_id);
 
-		const prisma = new PrismaClient();
+		// const prisma = new PrismaClient();
 
 		const txn = [
 			{

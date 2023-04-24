@@ -20,37 +20,21 @@ model allowlist {
   xp               xp?       @relation(fields: [xp_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "allowlist_new_xp_id_fkey")
 }
 
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model contract {
-  contract_address String             @id(map: "contracts_pkey")
-  owner            String             @db.VarChar(50)
-  name             String             @db.VarChar(250)
-  created_at       DateTime           @default(now())
-  updated_at       DateTime           @default(now())
-  contract_classes contract_classes[]
-}
-
-model contract_classes {
-  contract_id  String
-  class_id     String
-  metadata_url String   @db.VarChar(250)
-  name         String   @db.VarChar(250)
-  desc         String   @db.VarChar(1000)
-  opensea_url  String   @db.VarChar(250)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @default(now())
-  contract     contract @relation(fields: [contract_id], references: [contract_address], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([contract_id, class_id])
-}
-
-model contract_users {
-  contract_id String
-  user_id     String
-  role        String   @db.VarChar(50)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @default(now())
-
-  @@id([contract_id, user_id])
+  name             String    @db.VarChar(250)
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @default(now())
+  contract_name    String?
+  version          String?
+  type             String?
+  owner_address    String?
+  status           Int?
+  chain            String?
+  chain_id         Int?
+  deployed_at      DateTime? @db.Timestamptz(6)
+  id               BigInt    @id @default(autoincrement())
+  contract_address String?
 }
 
 model org {
@@ -99,32 +83,32 @@ model scheme {
 }
 
 model series {
-  id                Int       @id @default(autoincrement())
-  org_id            Int?
-  category          Int?      @db.SmallInt
-  title             String?
-  description       String?
-  image_url         String?
-  banner_url        String?
-  attributes        Json?
-  created_at        DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime? @db.Timestamptz(6)
-  contract_template Json?
-  contract_version  String?
-  tokens            Json?
-  slug              String?
-  uuid              String?   @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  contract          String?
-  requirements      String?
-  abi               Json[]    @db.Json
-  contract_address  String?
-  owner             String?
-  delegate_address  String?
-  template_address  String?
-  delegate_abi      Json[]    @db.Json
-  contract_abi      Json[]    @db.Json
-  org               org?      @relation(fields: [org_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  xp                xp[]
+  id               Int       @id @default(autoincrement())
+  org_id           Int?
+  category         Int?      @db.SmallInt
+  title            String?
+  description      String?
+  image_url        String?
+  banner_url       String?
+  attributes       Json?
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @db.Timestamptz(6)
+  contract_version String?
+  tokens           Json?
+  slug             String?
+  uuid             String?   @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  requirements     String?
+  abi              Json[]    @db.Json
+  contract_address String?
+  owner            String?
+  delegate_address String?
+  template_address String?
+  delegate_abi     Json[]    @db.Json
+  contract_abi     Json[]    @db.Json
+  template_id      BigInt?
+  org              org?      @relation(fields: [org_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  template         template? @relation(fields: [template_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "series_template_id_key")
+  xp               xp[]
 }
 
 model user {
@@ -146,25 +130,29 @@ model user {
 }
 
 model xp {
-  id            Int             @id @default(autoincrement())
-  created_at    DateTime?       @default(now()) @db.Timestamptz(6)
-  status        Int?            @db.SmallInt
-  contract      String?
-  xp_code       String?
-  title         String?
-  description   String?
-  series_id     Int?
-  image_url     String?
-  slug          String?
-  uuid          String?         @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  template      String?
-  updated_at    DateTime?       @default(now()) @db.Timestamptz(6)
-  class_id      String?
-  requirements  String?
-  allowlist     allowlist[]
-  allowlist_old allowlist_old[]
-  series        series?         @relation(fields: [series_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  xp_type       xp_type?        @relation(fields: [xp_code], references: [xp_code], onDelete: NoAction, onUpdate: NoAction)
+  id               Int         @id @default(autoincrement())
+  created_at       DateTime?   @default(now()) @db.Timestamptz(6)
+  status           Int?        @db.SmallInt
+  contract_address String?
+  xp_code          String?
+  title            String?
+  description      String?
+  series_id        Int?
+  image_url        String?
+  slug             String?
+  uuid             String?     @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  updated_at       DateTime?   @default(now()) @db.Timestamptz(6)
+  class_id         String?
+  requirements     String?
+  xp_font          String?
+  xp_font_color    String?
+  xp_font_size     String?
+  xp_font_weight   String?
+  xp_text_x        String?
+  xp_text_y        String?
+  allowlist        allowlist[]
+  series           series?     @relation(fields: [series_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  xp_type          xp_type?    @relation(fields: [xp_code], references: [xp_code], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model xp_type {
@@ -188,16 +176,47 @@ model transaction {
   token_id         String?
 }
 
-model allowlist_old {
-  id               String    @id(map: "allowlist_pkey") @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  created_at       DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
-  xp_id            Int?
-  user_address     String?
-  contract_address String?
-  is_owned         Boolean?  @default(false)
-  class_id2        Int?      @db.SmallInt
-  token_id         String?
-  class_id         String?
-  xp               xp?       @relation(fields: [xp_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "allowlist_xp_id_fkey")
+model template {
+  id                     BigInt   @id(map: "template2_pkey") @default(autoincrement())
+  template_name          String?  @default("")
+  mask                   String?  @default("")
+  sides                  String?  @default("4")
+  rotation               String?  @default("0")
+  radius                 String?  @default("175")
+  factor                 String?  @default(".5")
+  gradient               String?  @default("")
+  gradient_offset_1      String?  @default("")
+  gradient_offset_2      String?  @default("")
+  gradient_offset_3      String?  @default("")
+  gradient_offset_4      String?  @default("")
+  base_style             String?  @default("")
+  bg_color               String?  @default("")
+  image_uri              String?  @default("")
+  image_scale            String?  @default("")
+  image_xy               String?  @default("")
+  image_h                String?  @default("")
+  org_logo_uri           String?  @default("")
+  org_logo_scale         String?  @default("")
+  org_logo_w             String?  @default("")
+  org_logo_xy            String?  @default("")
+  org_text               String?  @default("")
+  org_font               String?  @default("")
+  org_font_size          String?  @default("")
+  org_text_xy            String?  @default("")
+  series_text            String?  @default("")
+  series_font            String?  @default("")
+  series_font_size       String?  @default("")
+  series_font_color      String?  @default("")
+  series_text_xy         String?  @default("")
+  xp_text                String?  @default("")
+  xp_text_xy             String?  @default("")
+  xp_font                String?  @default("")
+  xp_font_color          String?  @default("")
+  xp_font_size           String?  @default("")
+  xp_font_weight         String?  @default("")
+  chainxp_logo_uri       String?  @default("")
+  chainxp_logo_transform String?  @default("")
+  chainxp_logo_color     String?  @default("")
+  chainxp_logo_xy        String?  @default("")
+  series                 series[]
 }

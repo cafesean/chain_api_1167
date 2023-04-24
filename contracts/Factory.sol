@@ -5,6 +5,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./Access.sol";
+import "./interface/IProxy.sol";
 
 import "hardhat/console.sol";
 
@@ -29,8 +30,12 @@ contract ProxyFactory is OwnableUpgradeable, Access {
         _setupRole(SYS_ROLE, _owner);
     }
 
-    function cloneProxy(address _impl, bytes32 _salt) public onlyAdmin returns (address) {
-        address cloneAddress = Clones.cloneDeterministic(_impl, _salt);
+    function cloneProxy(address _impl, string memory _uuid) public onlyAdmin returns (address) {
+        bytes32 salt = keccak256(abi.encodePacked(_uuid));
+        address cloneAddress = Clones.cloneDeterministic(_impl, salt);
+
+        IProxy(_impl)
+            .registerClone(_uuid, cloneAddress);    
 
         emit ProxyCloned(cloneAddress);
 

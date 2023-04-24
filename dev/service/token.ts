@@ -14,7 +14,7 @@ export class TokenService {
 		console.log("classId: ", classId);
 
 		try {
-			var newTokenId = await contract.mint(classId, address, [], [], [], []);
+			const newTokenId = await contract.mint(classId, address, [], [], [], []);
 			console.log("newTokenId: ", newTokenId);
 			return newTokenId;
 		} catch (err) {
