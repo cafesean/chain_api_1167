@@ -24,7 +24,6 @@ contract ProxyFactory is OwnableUpgradeable, Access {
         // __Ownable_init();
         _owner = _msgSender();
         _setupRole(DEFAULT_ADMIN_ROLE, _owner);
-        _setupRole(DEFAULT_ADMIN_ROLE, _owner);
         _setupRole(ADMIN_ROLE, _owner);
         _setupRole(OPS_ROLE, _owner);
         _setupRole(SYS_ROLE, _owner);

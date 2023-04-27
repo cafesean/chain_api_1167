@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
-// import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155SupplyUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol";
@@ -8,7 +7,6 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-// import "@openzeppelin/contracts/utils/Base64.sol";
 import "./interface/ITemplate.sol";
 import "./Access.sol";
 import "hardhat/console.sol";
@@ -42,17 +40,9 @@ contract Base is Initializable,
     struct user {
         uint256 id;
         uint256 classId;
-        uint256 skillId;
         uint256 previousId;
         address account;
         string url;
-    }
-
-    struct skill {
-        uint256 id;
-        string code; //uppercase, one word
-        string name;
-        string skillUri;
     }
 
 
@@ -60,7 +50,6 @@ contract Base is Initializable,
     event ClassURI(string classUri, uint256 indexed classId);
     event TokenCreated(address userAddress, uint256 indexed tokenId);
     event ClassCreated(string name, uint256 indexed classId);
-    event SkillCreated(string name, uint256 indexed skillId);
     event AttributeCreated(string name, uint256 indexed attributeId);
 
     string public name;
@@ -70,35 +59,20 @@ contract Base is Initializable,
     address public DelegateAddress; 
     address public DefaultTemplate;
 
-    //address private _owner;
-    uint8 ATTR_STATUS;
-    uint8 ATTR_LEVEL;
-    uint8 ATTR_POS;
-    uint8 ATTR_LOC;
-    uint8 ATTR_YEAR;
-    uint8 ATTR_AVAIL;
-
-    // mapping(address => address) public relay; //calling address => delegate address
     mapping(string => address) public clones; // org_uuid => clone address
     mapping(uint256 => string) public tokenURI;
     mapping(uint256 => string) public classURI;
-    mapping(uint256 => string) public roles;
     mapping(uint256 => user) public users;
     mapping(uint256 => class) public classes;
     mapping(uint256 => attribute) public attributes;
-    mapping(uint256 => skill) public skills;
     mapping(uint256 => mapping(uint256 => string)) public userAttributes; //user => (attributeID => value)
-    mapping(uint256 => mapping(uint256 => uint256)) public userSkills; //user => (skill => rating)
     
     // constructor(string memory _name) ERC1155 ("https://gateway.pinata.cloud/ipfs/QmSir1V4yC9wE3XDspjw1jPdRSx6FLGLfcsKuZxj11XsEZ/default.json") {
     // }
 
     function initializeBase() public onlyInitializing {
-        baseURI = "https://www.test.com/";
-        DefaultTemplate = 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9;
     }
 
-    
     // function owner() public view returns (address) {
     //     return _owner;
     // }
@@ -117,6 +91,10 @@ contract Base is Initializable,
         return string(abi.encodePacked(baseURI, "contract.json"));
     }
     
+    function setBaseURI(string memory _baseURI) public onlyOps {
+        baseURI = _baseURI;
+    }
+
     function updateUsersClass(uint256[] memory _ids, uint256 _newClassId) public onlyOps {       
         for (uint256 i = 0; i < _ids.length; i++) {
             users[_ids[i]].classId = _newClassId;

@@ -139,6 +139,7 @@ export class ContractService extends BaseService {
 			contract_address,
 			org_id,
 			name,
+			baseUri,
 			description,
 			requirements,
 			slug,
@@ -164,7 +165,7 @@ export class ContractService extends BaseService {
 
 		// initialize clone
 		const cloneContract = await attachContract(owner, addressClone, ProxySol);
-		const initResponse = await cloneContract.initialize("", "");
+		const initResponse = await cloneContract.initialize(name, baseUri);
 
 		console.log("initResponse: ", initResponse);
 
@@ -235,9 +236,9 @@ export class ContractService extends BaseService {
 			.deploy()
 			.then((contract) => contract.deployed());
 
-		console.log("	contract owner: ", await contract.owner());
-		console.log("	Deployed contract: ", sol, " ", contract.address);
-		console.log("	Signer: ", signer.address);
+		// console.log("	contract owner: ", await contract.owner());
+		console.log("	 New contract address: ", contract.address);
+		// console.log("	Signer: ", signer.address);
 
 		// const prisma = new PrismaClient();
 
@@ -279,23 +280,6 @@ export class ContractService extends BaseService {
 			//register factory
 			await contractProxy.registerFactory(contractFactory.address);
 
-			// const utils = ethers.utils;
-
-			// const salt = utils.formatBytes32String("123");
-
-			// // test clone
-			// const clonedContract = await contractFactory.cloneProxy("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", salt);
-
-			// var cloneAddress;
-			// const receipt = await clonedContract.wait(); // response is empty if using hardhat network
-			// console.log("response=", await receipt.events);
-			// for (const event of receipt.events) {
-			// 	if (event.event === "ProxyCloned") {
-			// 		cloneAddress = event.args.cloneAddress;
-			// 	}
-			// }
-
-			// console.log("Cloned Proxy:", cloneAddress);
 		} catch (error) {
 			console.log("Deploy Error: ", error);
 			return error;
@@ -314,31 +298,25 @@ export class ContractService extends BaseService {
 		console.log("Deployer: ", deployer.address);
 		try {
 			contractDelegate = await this.deploySingle(deployer, DelegateSol, "-"); // #1 Delegate
-
-			console.log("	contractDelegate owner: ", await contractDelegate.owner());
 			addressDelegate = contractDelegate.address;
 			contractProxy = await this.deploySingle(deployer, ProxySol, reqBody.name); // #2 Proxy
 			await contractProxy.initialize("", "");
 
 			// ?await contractProxy.;
 			addressProxy = contractProxy.address;
-			console.log("	addressProxy owner: ", await contractProxy.owner());
-
 			console.log("Proxy and Delegate contracts deployed");
 			contractTemplate = await this.deploySingle(deployer, TemplateSol, "-"); // #3 Template
 			addressTemplate = contractTemplate.address;
-			console.log("	contractTemplate owner: ", await contractTemplate.owner());
 		} catch (error) {
 			console.log("Deploy Error: ", error);
 			return error;
 		}
 
 		try {
-			console.log("signer: ", deployer.address);
 			await contractProxy.connect(deployer).setDelegateAddress(addressDelegate);
 			const setDefaultTemplate = await contractProxy.setDefaultTemplate(addressTemplate);
 
-			console.log("setDefaultTemplate: ", setDefaultTemplate);
+			console.log("setDefaultTemplate - chainId: ", setDefaultTemplate.chainId);
 
 			await contractProxy.grantAccess(addressTemplate, "ADMIN_ROLE");
 			await contractProxy.connect(deployer).setTemplateContract(1, addressTemplate);
@@ -350,65 +328,6 @@ export class ContractService extends BaseService {
 
 		return { addressProxy };
 	}
-
-	// async deploy(reqBody: any) {
-	// 	const [deployer] = await ethers.getSigners();
-	// 	console.log("Deploying contracts with the account:", deployer.address);
-	// 	console.log("Account balance:", (await deployer.getBalance()).toString());
-
-	// 	// Deploy Proxy
-	// 	const factoryProxy = await ethers.getContractFactory(ProxySol);
-	// 	const deployProxy = await factoryProxy.deploy(reqBody.name);
-
-	// 	// Deploy Delegate
-	// 	console.log("factoryContract = ", deployProxy.address);
-
-	// 	// Deploy Proxy
-	// 	const factory = await ethers.getContractFactory(ProxySol);
-	// 	const factoryContract = await factory.deploy(reqBody.name);
-
-	// 	const prisma = new PrismaClient();
-
-	// 	await factoryContract
-	// 		.deployed()
-	// 		.then(async () => {
-	// 			console.log("In then");
-	// 			try {
-	// 				const contract = await prisma.org.update({
-	// 					where: {
-	// 						id: reqBody.org_id,
-	// 					},
-	// 					data: {
-	// 						series: {
-	// 							create: {
-	// 								contract: factoryContract.address,
-	// 								contract_address: factoryContract.address,
-	// 								owner: deployer.address,
-	// 								title: reqBody.name,
-	// 								description: reqBody.description,
-	// 								requirements: reqBody.requirements,
-	// 								image_url: reqBody.image_url,
-	// 								slug: reqBody.slug,
-	// 							},
-	// 						},
-	// 					},
-	// 				});
-	// 				return contract;
-	// 			} catch (err) {
-	// 				console.log("Error = ", err);
-	// 			}
-	// 		})
-	// 		.catch((err) => {
-	// 			return err;
-	// 		});
-
-	// console.log(`Contract deployed to ${factoryContract.address}`);
-
-	// console.log("value = ", await factoryContract.value());
-
-	// if (!contract) {
-	// return contract;
-	// }
 
 	async register(
 		contract_address: string,
@@ -430,21 +349,6 @@ export class ContractService extends BaseService {
 		//     ticketTypeId,
 		//   }
 		// });
-	}
-
-	async query(organizerId: string, eventId: string, ticketId: string, ticketTypeId: string) {
-		// const event = await this.prisma.contractEvents.findFirst({
-		//   where:  {
-		//     organizerId,
-		//     eventId,
-		//     ticketId,
-		//     ticketTypeId,
-		//   }
-		// });
-		// if (!event) {
-		//   throw errors.create(errors.StatusCodes.NOT_FOUND);
-		// }
-		// return event;
 	}
 
 	async addAdminUser(contract_address: string, userAddress: string) {
@@ -505,7 +409,7 @@ export class ContractService extends BaseService {
 
 		let response;
 		try {
-			response = await contractProxy.mint(Number(class_id), user_address, [], [], [], []);
+			response = await contractProxy.mint(Number(class_id), user_address);
 		} catch (e) {
 			console.log(e);
 			throw e;

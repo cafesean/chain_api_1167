@@ -5,7 +5,6 @@ import "./Base.sol";
 import "./Access.sol";
 // import "hardhat/console.sol";
 
-
 contract DelegateContract is
     Access,
     Base
@@ -14,17 +13,11 @@ contract DelegateContract is
     Counters.Counter classesCount;    
     Counters.Counter tokenCount;
     Counters.Counter attributeCount;
-    Counters.Counter skillCount;
-    // uint256 public tokenCount;
-    // uint256 public classesCount;
-    // uint256 public attributeCount;
-    // uint256 public skillCount;
 
     //use format: https://somedomain.com/{id}.json
     constructor()
     {
         _owner = _msgSender();
-        _setupRole(DEFAULT_ADMIN_ROLE, _owner);
         _setupRole(DEFAULT_ADMIN_ROLE, _owner);
         _setupRole(ADMIN_ROLE, _owner);
         _setupRole(OPS_ROLE, _owner);
@@ -55,27 +48,6 @@ contract DelegateContract is
         }
     }
 
-    function setSkill(
-        uint256 _id,
-        string memory _code,
-        string memory _name,
-        string memory _skillUri
-    ) public onlyOps returns (uint256) {
-        if (skills[_id].id == 0) {
-            skills[_id].id = _id;
-        }
-         if (keccak256(abi.encodePacked(_code)) == keccak256(abi.encodePacked("delete"))) {
-            delete skills[_id];
-            return 0;
-        } else {
-            skills[_id].code = _code;
-            skills[_id].name = _name;
-            bytes(_skillUri).length != 0 ? skills[_id].skillUri = _skillUri : "" ;
-            return _id;
-        }
-    }
-
-
     function setAttribute(
         uint256 _id,
         string memory _name,
@@ -99,22 +71,12 @@ contract DelegateContract is
     
     function setUserAttributes(
         uint256 _tokenId,
-        uint256[] calldata _skillIds,
-        uint256[] calldata _skillScores,
         uint256[] calldata _attributeIds,
         string[] calldata _attributeValues
     ) public onlyOps {
         //attribs
         for (uint256 _a = 0; _a < _attributeIds.length; _a++) {
             userAttributes[_tokenId][_attributeIds[_a]] = _attributeValues[_a];
-            // bytes(_attributeValues[_a]).length != 0 ? userAttributes[_tokenId][_attributeIds[_a]] = _attributeValues[_a] :
-            //     bytes(userAttributes[_tokenId][_attributeIds[_a]]).length == 0 ? userAttributes[_tokenId][_attributeIds[_a]] = "" : "";
-        }
-        //skills
-        for (uint256 _s = 0; _s < _skillIds.length; _s++) {
-            _s == 0 ? users[_tokenId].skillId = _skillIds[_s] : 0; //set first skill as user's primary skill
-            
-            userSkills[_tokenId][_skillIds[_s]] = _skillScores[_s];
         }
     }
 

@@ -1,0 +1,145 @@
+### Step 1 deploy new contracts (for cloning)
+POST http://localhost:4000/contract/deploy HTTP/1.1
+Content-Type: 'application/json'
+
+{
+    "name": "None"
+}
+
+### Step 2 deploy factory
+
+POST http://localhost:4000/contract/deployFactory HTTP/1.1
+Content-Type: 'application/json'
+
+{
+    "name": "-",
+    "proxy_address": "0x0e2968e9C369af6E9C162F897927C83dB209950C"
+}
+
+### Step 3 clone
+
+POST http://localhost:4000/contract/clone HTTP/1.1
+Content-Type: 'application/json'
+
+{
+    "org_id": 2,
+    "uuid": "1234",
+    "name": "Certified Developers",
+    "baseUri": "http://localhost:3000/api/media/",
+    "factory_address": "0x6C0729241c61538eC37f308355Dee97890eC82b7",
+    "contract_address": "0x0e2968e9C369af6E9C162F897927C83dB209950C",
+    "delegate_address": "0x7C9fD0c8Bd6900bedD517f672d7Ba7d0b5539757",
+    "description": "Certified Developer",
+    "image_url": "clone-16.png",
+    "slug": "certified-developer",
+    "requirements": "User must hold a Member NFT.",
+    "attributes": {
+        "year": 2023
+    }
+}
+
+### Step 4a addClass (contract)
+POST http://localhost:4000/contract/0xc6D217F553538FfD803a748a1C88A57E325A9718/class HTTP/1.1
+Content-Type: 'application/json'
+
+{
+    "series_id": 139,
+    "name": "Level 1",
+    "title": "Level 1",
+    "desc": "Certified Developer Level 1",
+    "image_url": "https://chainxp.sgp1.digitaloceanspaces.com/prod/template/xp-template-1.gif",
+    "slug": "level-1",
+    "template": "0x606C23c800349C7bA63b76945F5B5a9F23D15225"
+}
+
+### Step 4b addClass (collection)
+# POST http://localhost:4000/collection/0xa9760a0d411Cac67Ea6eab27D183D877c02B2E2e/class HTTP/1.1
+# Content-Type: 'application/json'
+
+# {
+#     "series_id": 90,
+#     "name": "upgrade_develop_20230426aClass 3",
+#     "title": "Series Class 3",
+#     "desc": "Series Class 3 description",
+#     "image_url": "asdfasf",
+#     "slug": "class-3",
+#     "template": "0x0000000000000000000000000000000000000000"
+# }
+
+
+# ### Step 5 mint from API via token service
+# PUT http://localhost:4000/token/mint/0xa9760a0d411Cac67Ea6eab27D183D877c02B2E2e/1?address=0x77fC1370F4D88b4446cc5d2a2FDAd2F91AA982D0 HTTP/1.1
+
+### Step 5b mint from API via contract service
+PUT http://localhost:4000/contract/0xc6D217F553538FfD803a748a1C88A57E325A9718/mint/1?address=0x77fC1370F4D88b4446cc5d2a2FDAd2F91AA982D0 HTTP/1.1
+
+### get classes
+GET http://localhost:4000/collection/class/0xc6D217F553538FfD803a748a1C88A57E325A9718/1/4 HTTP/1.1
+
+### get collection detail
+GET http://localhost:4000/collection/0xbF1E92867e19F885124c03429Afd8a11d28E7Cba HTTP/1.1
+
+###
+
+# mint from trpc
+PUT http://localhost:3000/api/token/mint/0x386170eF273e3774dd9eF8EF2a51a453d95713d4/1?address=0x77fC1370F4D88b4446cc5d2a2FDAd2F91AA982D0 HTTP/1.1
+
+###
+
+
+
+
+### GET uri
+ GET http://localhost:4000/collection/0xbF1E92867e19F885124c03429Afd8a11d28E7Cba HTTP/1.1
+
+### 
+
+GET https://nft.jetdevs.io/user/0x59882d76b74a790e2617d232ec152f287b542726/1/1 HTTP/1.1
+x-api-key: iqMv5azaUP45nVwbTPUaM2etmcbEaSyi3IbN7C9H
+Content-Type: application/json
+
+#  POST https://nft.jetdevs.io/user/0x59882d76b74a790e2617d232ec152f287b542726/1/1?classid=3 HTTP/1.1
+# x-api-key: iqMv5azaUP45nVwbTPUaM2etmcbEaSyi3IbN7C9H
+
+# get http://localhost:3000/collection/0x59882d76b74a790e2617d232ec152f287b542726 HTTP/1.1
+
+
+
+PUT http://localhost:3000/api/token/0x59882d76b74a790e2617d232ec152f287b542726/1?address=0x77fC1370F4D88b4446cc5d2a2FDAd2F91AA982D0
+
+### 
+
+# GET http://localhost:3000/user/0x59882d76b74a790e2617d232ec152f287b542726/1?attributeid=2 HTTP/1.1
+
+###
+
+GET https://nft.jetdevs.io/token/0x59882d76b74a790e2617d232ec152f287b542726/4/4 HTTP/1.1
+
+###
+
+
+# POST http://localhost:3000/token/mint/0x59882d76b74a790e2617d232ec152f287b542726/0?address=0x77fC1370F4D88b4446cc5d2a2FDAd2F91AA982D0 HTTP/1.1
+
+
+
+###
+
+
+POST https://nft.jetdevs.io/token/mint/0x4eb2eaae570621a1724b94a1b498939da3add7fb/1?address=0xee5E815873793fEb2a06e7EDA3205da71D5Cd1b1 HTTP/1.1
+x-api-key: iqMv5azaUP45nVwbTPUaM2etmcbEaSyi3IbN7C9H
+
+
+### Deploy requests
+PUT http://localhost:4000/contract/deploy HTTP/1.1
+Content-Type: 'application/json'
+
+{ 
+    "name": "Chain 5",
+    "org_id": 1,
+    "description": "New series for ChainXP",
+    "image_url": "",
+    "slug": "chain5"
+}
+
+### Get requests
+GET http://localhost:4000/token/0x59882d76b74a790e2617d232ec152f287b542726/4/4 HTTP/1.1
