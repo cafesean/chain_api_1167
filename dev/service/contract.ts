@@ -6,7 +6,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 // Migrate these to params
-const ProxySol = "ProxyContract";
+const ProxySol = "TokenContract";
 const DelegateSol = "DelegateContract";
 // const TemplateSol =
 // 	"./contracts/template/jetdevs/jetdevs-developer.sol:TemplateContract";
@@ -137,6 +137,7 @@ export class ContractService extends BaseService {
 			uuid,
 			factory_address,
 			contract_address,
+			delegate_address,
 			org_id,
 			name,
 			baseUri,
@@ -144,6 +145,7 @@ export class ContractService extends BaseService {
 			requirements,
 			slug,
 			image_url,
+			template_id,
 		} = reqBody;
 		const utils = ethers.utils;
 		const salt = utils.formatBytes32String(uuid);
@@ -193,29 +195,21 @@ export class ContractService extends BaseService {
 
 		let seriesData;
 		try {
-			seriesData = await prisma.org.update({
-				where: {
-					id: org_id,
-				},
+			seriesData = await prisma.series.create({
 				data: {
-					series: {
-						create: {
-							contract_address: addressClone,
-							owner: owner.address,
-							title: name,
-							description: description,
-							requirements: requirements,
-							image_url: image_url,
-							slug: slug,
-						},
-					},
+					org_id: org_id,
+					contract_address: addressClone,
+					delegate_address: delegate_address,
+					owner: owner.address,
+					title: name,
+					description: description,
+					requirements: requirements,
+					image_url: image_url,
+					slug: slug,
+					template_id: template_id as number,
 				},
-				include: {
-					series: {
-						select: {
-							id: true, // Include the new series id in the returned data
-						},
-					},
+				select: {
+					id: true, // Include the new series id in the returned data
 				},
 			});
 		} catch (error) {
@@ -279,7 +273,6 @@ export class ContractService extends BaseService {
 
 			//register factory
 			await contractProxy.registerFactory(contractFactory.address);
-
 		} catch (error) {
 			console.log("Deploy Error: ", error);
 			return error;

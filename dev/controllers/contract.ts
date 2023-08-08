@@ -159,7 +159,7 @@ console.log("In addClass route")
 	//   }
 	// );
 
-	fastify.put(
+	fastify.post(
 		"/:contract_id/mint/:class_id",
 		mintContractNFTSchema(fastify),
 		async (request: any, resp: any) => {

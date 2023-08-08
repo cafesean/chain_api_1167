@@ -105,7 +105,7 @@ contract Base is Initializable,
     }
 
     function mintSingle (address _to, uint256 _newTokenId, uint256 _classId) public onlyOps returns (uint256) {        
-            _mint(_to, _newTokenId, 1, "");
+            _mint(_to, _classId, 1, "");
             users[_newTokenId].id = _newTokenId;
             users[_newTokenId].account = _to;
             users[_newTokenId].classId = _classId;

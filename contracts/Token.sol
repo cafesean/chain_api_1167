@@ -9,7 +9,7 @@ import "./interface/IDelegate.sol";
 
 import "hardhat/console.sol";
 
-contract ProxyContract is Access, Base {
+contract TokenContract is Access, Base {
     using Counters for Counters.Counter;
     Counters.Counter classesCount;
     Counters.Counter tokenCount;

@@ -23,14 +23,16 @@ Content-Type: 'application/json'
 
 {
     "org_id": 1,
-    "uuid": "0000-11111-10",
-    "name": "Series 10",
+    "template_id": 1,
+    "uuid": "0000-11111-26",
+    "name": "Certified Developer II",
+    "baseUri": "https://localhost:3000/api/media/",
     "factory_address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
     "contract_address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
     "delegate_address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "description": "ChainXP Series #8",
-    "image_url": "clone-8.png",
-    "slug": "clone-8",
+    "image_url": "https://chainxp.sgp1.digitaloceanspaces.com/prod/template/xp-template-1.gif",
+    "slug": "level-5",
     "requirements": "Nothing."
 }
 
