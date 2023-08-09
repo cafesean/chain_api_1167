@@ -70,7 +70,7 @@ contract TemplateContract is Ownable {
         bytes memory dataURI;
         string memory proxyAddress = Strings.toHexString(
             uint160(_msgSender()),
-            20
+            42
         );
         dataURI = abi.encodePacked(
             string.concat(

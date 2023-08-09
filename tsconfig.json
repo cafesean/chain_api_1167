@@ -1,9 +1,11 @@
 {
 	"extends": "fastify-tsconfig",
 	"compilerOptions": {
-    "baseUrl": ".",
+		"baseUrl": ".",
 		"paths": {
-			"@contracts/*": ["contracts/*"]
+			"@contracts/*": ["contracts/*"],
+			"@utils/*": ["utils/*"],
+			"@constants/*": ["constants/*"],
 		},
 		"allowJs": true,
 		"declaration": false,
@@ -16,5 +18,5 @@
 		"sourceMap": false,
 		"skipLibCheck": true
 	},
-	"include": ["dev/**/*.ts", "dev/*.ts", "dev/*.js", "hardhat.config.ts"]
+	"include": ["*.ts", "src/**/*.ts", "src/*.ts", "src/*.js", "hardhat.config.ts"]
 }

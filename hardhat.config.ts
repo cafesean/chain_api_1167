@@ -1,12 +1,14 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
-import * as dotenv from "dotenv";
+require("dotenv").config({ path: __dirname + "/.env.local" });
 
-dotenv.config();
+// MAINNET
+const NETWORK_MAINNET_RPC_URL = process.env.PROVIDER_URL_PROD;
+const MAINNET_PRIVATE_KEY = process.env.PRIVATE_KEY_PROD;
 
-const NETWORK_MAINNET_RPC_URL = process.env.ALCHEMY_MAINNET_URL;
-const NETWORK_TESTNET_RPC_URL = process.env.ALCHEMY_TESTNET_URL;
-const TESTNET_PRIVATE_KEY = process.env.TESTNET_PRIVATE_KEY;
+// MUMBAI
+const NETWORK_TESTNET_RPC_URL = process.env.PROVIDER_URL_TEST;
+const TESTNET_PRIVATE_KEY = process.env.PRIVATE_KEY_TEST;
 
 const config: HardhatUserConfig = {
 	solidity: {
@@ -27,7 +29,7 @@ const config: HardhatUserConfig = {
 		},
 		PolygonMainnet: {
 			url: NETWORK_MAINNET_RPC_URL,
-			accounts: [TESTNET_PRIVATE_KEY!],
+			accounts: [MAINNET_PRIVATE_KEY!],
 			chainId: 137,
 		},
 		hardhat: {

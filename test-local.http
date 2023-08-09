@@ -13,7 +13,7 @@ Content-Type: 'application/json'
 
 {
     "name": "-",
-    "proxy_address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+    "proxy_address": "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690"
 }
 
 ### Step 3 clone
@@ -24,15 +24,15 @@ Content-Type: 'application/json'
 {
     "org_id": 1,
     "template_id": 1,
-    "uuid": "0000-11111-26",
-    "name": "Certified Developer II",
+    "uuid": "0000-11111-34",
+    "name": "Certified Developer IX",
     "baseUri": "https://localhost:3000/api/media/",
-    "factory_address": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
-    "contract_address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "delegate_address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
-    "description": "ChainXP Series #8",
+    "factory_address": "0x95401dc811bb5740090279Ba06cfA8fcF6113778",
+    "contract_address": "0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690",
+    "delegate_address": "0xE6E340D132b5f46d1e472DebcD681B2aBc16e57E",
+    "description": "Certified Developer VIII",
     "image_url": "https://chainxp.sgp1.digitaloceanspaces.com/prod/template/xp-template-1.gif",
-    "slug": "level-5",
+    "slug": "level-IX",
     "requirements": "Nothing."
 }
 

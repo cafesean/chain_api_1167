@@ -22,19 +22,24 @@ model allowlist {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
 model contract {
+  contract_address String?
   name             String    @db.VarChar(250)
   created_at       DateTime  @default(now())
   updated_at       DateTime  @default(now())
-  contract_name    String?
-  version          String?
-  type             String?
-  owner_address    String?
-  status           Int?
   chain            String?
   chain_id         Int?
+  contract_name    String?
   deployed_at      DateTime? @db.Timestamptz(6)
   id               BigInt    @id @default(autoincrement())
-  contract_address String?
+  owner_address    String?
+  status           Int?
+  type             String?
+  version          String?
+  abi              String?
+  bytecode         String?
+  source_name      String?
+  factory_address  String?
+  cloned_from      String?
 }
 
 model org {
@@ -43,12 +48,14 @@ model org {
   name         String?
   country_id   BigInt?
   type         Int?      @db.SmallInt
-  auth_wallets Json?
   access_key   Json[]
   logo_url     String?
   slug         String?
   uuid         String?   @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
   updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+  status       Int?      @db.SmallInt
+  home_page    String?
+  auth_wallets Json[]
   series       series[]
 }
 
@@ -102,12 +109,11 @@ model series {
   contract_address String?
   owner            String?
   delegate_address String?
-  template_address String?
   delegate_abi     Json[]    @db.Json
   contract_abi     Json[]    @db.Json
   template_id      BigInt?
   org              org?      @relation(fields: [org_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  template         template? @relation(fields: [template_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "series_template_id_key")
+  template         template? @relation(fields: [template_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "series_template_id_key")
   xp               xp[]
 }
 
@@ -133,7 +139,6 @@ model xp {
   id               Int         @id @default(autoincrement())
   created_at       DateTime?   @default(now()) @db.Timestamptz(6)
   status           Int?        @db.SmallInt
-  contract_address String?
   xp_code          String?
   title            String?
   description      String?
@@ -144,6 +149,7 @@ model xp {
   updated_at       DateTime?   @default(now()) @db.Timestamptz(6)
   class_id         String?
   requirements     String?
+  contract_address String?
   xp_font          String?
   xp_font_color    String?
   xp_font_size     String?
@@ -151,7 +157,7 @@ model xp {
   xp_text_x        String?
   xp_text_y        String?
   allowlist        allowlist[]
-  series           series?     @relation(fields: [series_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  series           series?     @relation(fields: [series_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   xp_type          xp_type?    @relation(fields: [xp_code], references: [xp_code], onDelete: NoAction, onUpdate: NoAction)
 }
 
@@ -180,10 +186,6 @@ model template {
   id                     BigInt   @id(map: "template2_pkey") @default(autoincrement())
   template_name          String?  @default("")
   mask                   String?  @default("")
-  sides                  String?  @default("4")
-  rotation               String?  @default("0")
-  radius                 String?  @default("175")
-  factor                 String?  @default(".5")
   gradient               String?  @default("")
   gradient_offset_1      String?  @default("")
   gradient_offset_2      String?  @default("")
@@ -218,5 +220,9 @@ model template {
   chainxp_logo_transform String?  @default("")
   chainxp_logo_color     String?  @default("")
   chainxp_logo_xy        String?  @default("")
+  factor                 String?  @default(".5")
+  radius                 String?  @default("175")
+  rotation               String?  @default("0")
+  sides                  String?  @default("4")
   series                 series[]
 }

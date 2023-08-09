@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "{\"createdOn\":\"Mac\",\"createdBy\":\"Amplify\",\"createdWith\":\"10.5.1\",\"stackType\":\"function-Lambda\",\"metadata\":{}}",
+  "Description": "{\"createdOn\":\"Mac\",\"createdBy\":\"Amplify\",\"createdWith\":\"12.2.3\",\"stackType\":\"function-Lambda\",\"metadata\":{}}",
   "Parameters": {
     "CloudWatchRule": {
       "Type": "String",
@@ -14,15 +14,6 @@
       "Type": "String"
     },
     "s3Key": {
-      "Type": "String"
-    },
-    "alchemyTestnetUrl": {
-      "Type": "String"
-    },
-    "testnetPrivateKey": {
-      "Type": "String"
-    },
-    "abi": {
       "Type": "String"
     }
   },
@@ -40,7 +31,7 @@
     "LambdaFunction": {
       "Type": "AWS::Lambda::Function",
       "Metadata": {
-        "aws:asset:path": "./build",
+        "aws:asset:path": "./src",
         "aws:asset:property": "Code"
       },
       "Properties": {
@@ -56,12 +47,12 @@
         "FunctionName": {
           "Fn::If": [
             "ShouldNotCreateEnvResources",
-            "token",
+            "tokenapi",
             {
               "Fn::Join": [
                 "",
                 [
-                  "token",
+                  "tokenapi",
                   "-",
                   {
                     "Ref": "env"
@@ -78,15 +69,6 @@
             },
             "REGION": {
               "Ref": "AWS::Region"
-            },
-            "ALCHEMY_TESTNET_URL": {
-              "Ref": "alchemyTestnetUrl"
-            },
-            "TESTNET_PRIVATE_KEY": {
-              "Ref": "testnetPrivateKey"
-            },
-            "ABI": {
-              "Ref": "abi"
             }
           }
         },
@@ -96,12 +78,11 @@
             "Arn"
           ]
         },
-        "Runtime": "nodejs16.x",
-        "MemorySize": "1536",
+        "Runtime": "nodejs14.x",
         "Layers": [
           "arn:aws:lambda:ap-southeast-1:888955155988:layer:token-node_modules:3"
         ],
-        "Timeout": 10
+        "Timeout": 25
       }
     },
     "LambdaExecutionRole": {
@@ -110,12 +91,12 @@
         "RoleName": {
           "Fn::If": [
             "ShouldNotCreateEnvResources",
-            "nftlambdaLambdaRolecf5bd7c0",
+            "chainxpLambdaRole5f88a449",
             {
               "Fn::Join": [
                 "",
                 [
-                  "nftlambdaLambdaRolecf5bd7c0",
+                  "chainxpLambdaRole5f88a449",
                   "-",
                   {
                     "Ref": "env"
@@ -209,6 +190,14 @@
     "LambdaExecutionRole": {
       "Value": {
         "Ref": "LambdaExecutionRole"
+      }
+    },
+    "LambdaExecutionRoleArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "LambdaExecutionRole",
+          "Arn"
+        ]
       }
     }
   }
