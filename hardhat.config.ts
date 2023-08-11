@@ -1,6 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
-require("dotenv").config({ path: __dirname + "/.env.local" });
+require("dotenv").config();
 
 // MAINNET
 const NETWORK_MAINNET_RPC_URL = process.env.PROVIDER_URL_PROD;

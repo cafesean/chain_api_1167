@@ -18,5 +18,5 @@
 		"sourceMap": false,
 		"skipLibCheck": true
 	},
-	"include": ["*.ts", "src/**/*.ts", "src/*.ts", "src/*.js", "hardhat.config.ts"]
+	"include": ["*.ts", "src/**/*.ts", "src/*.ts", "src/*.js", "src/contracts/**/*.*"],
 }
